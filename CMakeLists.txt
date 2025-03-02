@@ -3,4 +3,5 @@ project(app_server)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(app_server cpp/main.cpp)
+add_executable(app_server cpp/main.cpp
+        header/DBManager.h)
