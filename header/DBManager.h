@@ -21,11 +21,11 @@ protected:
     DBManager();
     DBManager(std::string& in_path_db, std::string& in_path_logfile); // конструктор по умолчанию(путь к БД прочитается из файла)
     ~DBManager(); // деструктор класса
-    void open_connection(); // подлючение к базе данных
+    bool open_connection(); // подлючение к базе данных
     bool check_connection(); // проверка подключения к БД
-    void insert(sqlite3_stmt &in_stmt); // функция для выполнения запроса INSERT
+    bool insert(sqlite3_stmt &in_stmt); // функция для выполнения запроса INSERT
     std::vector<std::map<std::string, std::string>> select(sqlite3_stmt &in_stmt); // функция для выполнения запросов SELECT
-    virtual bool auth(std::string in_login, std::string in_hash_passwd) = 0; // вирутальная функция для аутентификации
+    bool close_connection();
 
 };
 

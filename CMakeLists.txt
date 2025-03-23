@@ -7,4 +7,7 @@ include_directories(${CMAKE_SOURCE_DIR}/header)
 
 add_executable(app_server cpp/main.cpp
         header/DBManager.h
-        cpp/DBManager.cpp)
+        cpp/DBManager.cpp
+        header/IoTDB.h
+        header/IRequestHandler.h
+        header/Request_and_Respore.h)
