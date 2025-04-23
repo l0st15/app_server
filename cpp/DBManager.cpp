@@ -34,7 +34,7 @@ bool DBManager::open_connection()
 
 bool DBManager::check_connection()
 {
-
+    return true;
 }
 
 
