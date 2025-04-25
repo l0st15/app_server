@@ -21,9 +21,6 @@ SOCKET Socket::createSock(int port,sockaddr_in addr) {
         return INVALID_SOCKET;
     }
 
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = htons(port);
 
     if (bind(sock, (SOCKADDR*)&addr, sizeof(addr)) == SOCKET_ERROR) {
         closesocket(sock);
