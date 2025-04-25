@@ -16,8 +16,8 @@ add_executable(app_server cpp/main.cpp
         header/router.h
         header/UserHandler.h
         cpp/UserHandler.cpp
-        cpp/socket.cpp
-        header/socket.h)
+        cpp/network.cpp
+        header/network.h)
 
 target_include_directories(app_server PRIVATE ${BCRYPT_INCLUDE_DIR})
 target_link_libraries(app_server PRIVATE ${BCRYPT_LIBRARY})
