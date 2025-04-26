@@ -19,7 +19,9 @@ add_executable(app_server cpp/main.cpp
         header/UserHandler.h
         cpp/UserHandler.cpp
         cpp/network.cpp
-        header/network.h)
+        header/network.h
+        header/Crypto.h
+        cpp/Crypto.cpp)
 
 target_link_libraries(app_server PRIVATE ws2_32)
 target_include_directories(app_server PRIVATE ${SODIUM_INCLUDE_DIR})
