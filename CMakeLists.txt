@@ -24,6 +24,7 @@ add_executable(app_server cpp/main.cpp
         cpp/network.cpp
         header/network.h)
 
+target_link_libraries(app_server PRIVATE ws2_32)
 target_include_directories(app_server PRIVATE ${SODIUM_INCLUDE_DIR})
 target_include_directories(app_server PRIVATE ${SODIUM_INCLUDE_DIR2})
 target_link_libraries(app_server PRIVATE ${SODIUM_LIBRARY})
