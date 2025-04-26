@@ -25,7 +25,10 @@ struct Response
     int boby_lenght = 0; // длинна тела ответа
     std::string boby; // тело ответа
 public:
-    Response();
+    Response()
+    {
+
+    }
     Response(int code, const std::string& mes)
     {
         status[code] = mes;
