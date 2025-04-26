@@ -14,7 +14,7 @@ struct Request
    std::map<std::string, std::string> headers; // заголовки запроса формата (имя_заголовка, значение)
    std::string http_version; //версия протокла http
    int boby_lenght = 0; // длинна тела запроса (по умолчанию 0)
-   std::string boby; //тело запроса (тут передаются данные)
+   std::string body; //тело запроса (тут передаются данные)
    std::map<std::string, std::string> query_param; // парметры пути(в URL после ?)
 };
 

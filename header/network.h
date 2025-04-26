@@ -6,12 +6,13 @@
 #include <vector>
 #include <iostream>
 #include <string>
+#include "Request_and_Respore.h"
 class Network
 {
 public:
     Network(std::string ip, short port);
     ~Network();
-    int recieveRequest();
+    int recieveRequest(Request *req);
     void sendResponse();
 protected:
     void closeAndClear(SOCKET sock);

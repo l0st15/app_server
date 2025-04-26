@@ -2,6 +2,8 @@
 // Created by Misha on 25.04.2025.
 //
 #include "network.h"
+#include <regex>
+
 
 Network::Network(std::string ip,short port)
 {
@@ -11,6 +13,10 @@ Network::Network(std::string ip,short port)
 
     srvSock = INVALID_SOCKET;
     clientSock = INVALID_SOCKET;
+}
+Network::~Network()
+{
+
 }
 void Network::closeAndClear(SOCKET sock)
 {
@@ -27,7 +33,7 @@ void Network::closeAndClear()
 {
     WSACleanup();
 }
-int Network::recieveRequest()
+int Network::recieveRequest(Request *req)
 {
     if (FAILED(WSAStartup(MAKEWORD(2, 2), &sdata) != 0)) {
         std::cout<<WSAGetLastError()<<std::endl;
@@ -61,18 +67,36 @@ int Network::recieveRequest()
     clientSock = accept(srvSock, (sockaddr*)&clientInfo, &clientInfo_size);
     if (clientSock == INVALID_SOCKET) {
         std::cout << WSAGetLastError() << std::endl;
-        std::vector <SOCKET> toClear{srvSock,clientSock};
-        closeAndClear(toClear);
+        closeAndClear(std::vector <SOCKET> {srvSock,clientSock});
         return -5;
     }
-    //packet_size = recv(clientSock, servBuff.data(), servBuff.size(), 0);
-    //servBuff.data();
+    packet_size = recv(clientSock, servBuff.data(), servBuff.size(), 0);
+    std::string request(servBuff.begin(), servBuff.end());
+    //первая строка
+    std::regex start_line_regex(R"(^([A-Z]+)\s+([^?# ]*)(?:\?([^ ]*))?\s+(HTTP/\d+\.\d+)\r\n)",std::regex::icase);
+    //TODO сделать обработку query params
+    //body and TODO content-length
+    size_t headers_end = request.find("\r\n\r\n");
+    size_t body_start = headers_end + 4;
+    if (body_start <= request.size()) {
+        req->body = request.substr(body_start);
 
-    //TODO передавать параметры в структуру, которой еще нету
+    std::smatch start_line_match;
+    if (!std::regex_search(request, start_line_match, start_line_regex))
+        return -6;
 
+    if (false)
+        return -8; //Зарезервировано под query params
+
+
+    req->method = start_line_match[1];
+    req->path = start_line_match[2];
+    req->http_version = start_line_match[4];
+    //TEMPORARY
+    closeAndClear(std::vector <SOCKET> {srvSock,clientSock});
+    return 1;
 }
 
 //TODO sendResponse получает структуру и отправляет ее, затем завершает соединение
 //TODO совершить суицид
-//TODO проверить поддерживается ли соединение между методами
 //TODO ДОБАВИТЬ ПОТОЧНОСТЬ ИЛИ ОТСУТСТВИЕ БЛОКИРОВОК(???????)
