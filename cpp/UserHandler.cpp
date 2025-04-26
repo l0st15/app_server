@@ -3,6 +3,7 @@
 //
 #include <iostream>
 #include "UserHandler.h"
+#include "sodium.h"
 
 
 
@@ -178,6 +179,10 @@ Response UserHandler::userAuth(const Request& req)
     }
 }
 
+Response UserHandler::userInfo(const Request &req)
+{
+    return Response(200, "OK");
+}
 
 bool UserHandler::openDB()
 {

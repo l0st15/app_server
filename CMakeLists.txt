@@ -13,9 +13,6 @@ set(SODIUM_LIBRARY "${CMAKE_SOURCE_DIR}/lib/libsodium-win64/lib/libsodium.a")
 set(SQLITE_LIBRARY "${CMAKE_SOURCE_DIR}/lib/sqlite3.dll")
 
 add_executable(app_server cpp/main.cpp
-        header/DBManager.h
-        cpp/DBManager.cpp
-        header/IoTDB.h
         header/IRequestHandler.h
         header/Request_and_Respore.h
         header/router.h
