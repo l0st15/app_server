@@ -1,23 +1,17 @@
 //
 // Created by Даниил on 22.04.2025.
 //
-#include <iostream>
 #include "UserHandler.h"
-#include "sodium.h"
 
 
-
-
-Response UserHandler::process(const Request &req)
-{
-    if(req.method == "POST")
-    {
+Response UserHandler::RequestProcesssing(const Request &req) {
+    if(req.method == "POST") {
         if(req.path == "/reg")
             return userReg(req);
         else if(req.path == "/login")
             return userLogin(req);
-        else if(req.path == "/get_info")
-            return userInfo(req);
+        //else if(req.path == "/get_info")
+          //  return userInfo(req);
         else
             return Response(405, "Method Not Allowed");
     }
@@ -25,14 +19,11 @@ Response UserHandler::process(const Request &req)
         return Response(405, "Method Not Allowed");
 }
 
-Response UserHandler::userReg(const Request &req)
-{
+Response UserHandler::userReg(const Request &req) {
     if(!openDB())
         return Response(400, "Bad request");
-    else
-    {
-        try
-        {
+    else {
+        try {
             auto json = nlohmann::json::parse(req.boby); // парсинг тела запроса
             // получаем логи и пароль
             std::string login = json["login"];
@@ -41,7 +32,7 @@ Response UserHandler::userReg(const Request &req)
             if(login.empty() || password.empty())
                 return Response(400, "Login and password are required");
 
-            std::string hash_password = "werwe"; // генерация хеша пароля
+            std::string hash_password = crypto_module.hashPassword(password); // генерация хеша пароля
 
             if(!openDB()) // открытие бд
                 return Response(400, "Error open DB");
@@ -49,16 +40,14 @@ Response UserHandler::userReg(const Request &req)
             std::string sql_query = "INSERT INTO user(login, hash_password) VALUES(?, ?)"; // тело запроса
             sqlite3_stmt* stmt; // указатель на параметризованный запрос
             // получение параметризованного запроса
-            if(sqlite3_prepare_v2(db, sql_query.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
-            {
+            if(sqlite3_prepare_v2(db, sql_query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
                 std::cerr << "аааааа БИБЕ сломалось\n";
                 return Response(400, "Error DB");
             }
             sqlite3_bind_text(stmt, 1, login.c_str(), -1, SQLITE_STATIC); // подстановка логина
             sqlite3_bind_text(stmt, 2, hash_password.c_str(), -1, SQLITE_STATIC); // подстановка пароля
 
-            if(sqlite3_step(stmt) != SQLITE_DONE) // выполнение запроса
-            {
+            if(sqlite3_step(stmt) != SQLITE_DONE) { // выполнение запроса
                 sqlite3_finalize(stmt); // удаление запроса
                 std::cerr << "User already exists\n";
                 return Response(400, "User already exists");
@@ -68,131 +57,77 @@ Response UserHandler::userReg(const Request &req)
             return Response(201, "User registered");
 
         }
-        catch (const std::exception& e)
-        {
+        catch (const std::exception& e) {
             std::cerr << e.what();
             return Response(400, "Bad request");
         }
+        closeDB();
     }
 }
 
-Response UserHandler::userLogin(const Request &req)
-{
-    try
-    {
-        auto json = nlohmann::json::parse(req.boby); // получение логина и пароля
-        std::string login = json["login"];
-        std::string password = json["password"];
+Response UserHandler::userLogin(const Request &req) {
 
-        if(login.empty() || password.empty())  // проверка на null
-        {
-            std::cerr << "login or password is null\n";
-            return Response(400, "Login and password are required");
-        }
+    auto json = nlohmann::json::parse(req.boby);
+    std::string login = json["login"];
+    std::string password = json["password"];
 
-        if(!openDB()) // открытие БД
-        {
-            std::cerr << "DB error\n";
-            return Response(400, "DB error");
-        }
+    if(login.empty() || password.empty())
+        return Response(400, "Login and password are required");
 
-        sqlite3_stmt* stmt;
-        std::string sql_query = "SELECT id, password FROM user WHERE login = ?;"; // тело запроса
+    std::string hash_password = getUserHashPassword(login);
+    if(crypto_module.verifyPassword(hash_password, password)) {
+        nlohmann::json user_uuid;
+        user_uuid["uuid"] = crypto_module.uuidGen();
+        Response res(200, "OK");
+        res.boby = user_uuid.dump();
+        return res;
+    } else
+        return Response(401, "ТИ Мошенник");
 
-        if(sqlite3_prepare_v2(db, sql_query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) // параметризированный запрос
-        {
-            std::cerr << "prepare error\n";
-            return Response(400, "DB error");
-        }
+}
 
-        sqlite3_bind_text(stmt, 1, login.c_str(), -1, SQLITE_STATIC); // подстановка параметров
+std::string UserHandler::getUserHashPassword(const std::string& user_login) {
 
-        if (sqlite3_step(stmt) != SQLITE_ROW)
-        {
-            sqlite3_finalize(stmt);
-            return Response(401, "Invalid credentials");
-        }
+    if(!openDB())
+        return "";
 
-        int user_id = sqlite3_column_int(stmt, 0); // получнеие id из БД
-        std::string stored_hash = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)); // получение пароля из БД
+    std::string hash_password;
+    std::string sql_query = "SELECT hash_password FROM user WHERE login = ?;";
+    sqlite3_stmt* stmt;
 
+    if(sqlite3_prepare_v2(db, sql_query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "аааааа БИБЕ сломалось\n";
+        return "";
+    }
+    sqlite3_bind_text(stmt, 1, user_login.c_str(), -1, SQLITE_STATIC);
+
+    if (sqlite3_step(stmt) != SQLITE_ROW) {
         sqlite3_finalize(stmt);
-
-        if(true) // проверка валидности пароля
-        {
-            return Response(401, "Invalid password");
-        }
-
-        std::string token = "secure token" + std::to_string(user_id); // типо генерация токена
-        Response response;
-        response.status[200] = "OK";
-        response.headers["token"] = token;
-        return response;
+        return "";
     }
-    catch (const std::exception& e)
-    {
-        std::cerr << e.what() << "\n";
-        return Response(400, "Bad request");
-    }
+    hash_password = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+    sqlite3_finalize(stmt);
+    closeDB();
+    return hash_password;
 }
 
-Response UserHandler::userAuth(const Request& req)
-{
-    try
-    {
-        auto json = nlohmann::json::parse(req.boby);
-        std::string token = json["token"];
-
-        if(!openDB())
-        {
-            std::cerr << "БИБЕ сломалось\n";
-            return Response(400, "");
-        }
-
-        sqlite3_stmt* stmt;
-        std::string sql_query = "SELECT id FROM user_token WHERE token = ?;";
-
-        if(sqlite3_prepare_v2(db, sql_query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) // параметризированный запрос
-        {
-            std::cerr << "prepare error\n";
-            return Response(400, "DB error");
-        }
-
-        sqlite3_bind_text(stmt, 1, token.c_str(), -1, SQLITE_STATIC); // подстановка параметров
-
-        if (sqlite3_step(stmt) != SQLITE_ROW)
-        {
-            sqlite3_finalize(stmt);
-            return Response(401, "ты мошенник");
-        }
-
-        Response res;
-
-
-        return Response(400, "не повезло не фартануло");
-
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << "ты мошенник\n";
-        return Response(400, "не повезло не фартануло");
-    }
-}
-
-Response UserHandler::userInfo(const Request &req)
-{
-    return Response(200, "OK");
-}
-
-bool UserHandler::openDB()
-{
-    if(sqlite3_open("database/server_db.db", &db))
-    {
+bool UserHandler::openDB() {
+    if(sqlite3_open("database/server_db.db", &db)) {
         std::cerr << "Error open DB" << sqlite3_errmsg(db) << "\n";
         return false;
     }
-    else
-    {
+    else {
+        std::cerr << "Opened DB Successfully!\n";
+        return true;
+    }
+}
+
+bool UserHandler::closeDB() {
+    if(sqlite3_close(db)) {
+        std::cerr << "Error close DB" << sqlite3_errmsg(db) << "\n";
+        return false;
+    }
+    else {
         std::cerr << "Opened DB Successfully!\n";
         return true;
     }
