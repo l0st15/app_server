@@ -3,7 +3,7 @@
 //
 #include <iostream>
 #include "UserHandler.h"
-#include "BCrypt.hpp"
+
 
 
 
@@ -17,8 +17,6 @@ Response UserHandler::process(const Request &req)
             return userLogin(req);
         else if(req.path == "/get_info")
             return userInfo(req);
-        else if(req.path == "/get_info/poll")
-            return userPoll(req);
         else
             return Response(405, "Method Not Allowed");
     }
@@ -42,7 +40,7 @@ Response UserHandler::userReg(const Request &req)
             if(login.empty() || password.empty())
                 return Response(400, "Login and password are required");
 
-            std::string hash_password = BCrypt::generateHash(password); // генерация хеша пароля
+            std::string hash_password = "werwe"; // генерация хеша пароля
 
             if(!openDB()) // открытие бд
                 return Response(400, "Error open DB");
@@ -119,7 +117,7 @@ Response UserHandler::userLogin(const Request &req)
 
         sqlite3_finalize(stmt);
 
-        if(!BCrypt::validatePassword(password, stored_hash)) // проверка валидности пароля
+        if(true) // проверка валидности пароля
         {
             return Response(401, "Invalid password");
         }
@@ -136,6 +134,50 @@ Response UserHandler::userLogin(const Request &req)
         return Response(400, "Bad request");
     }
 }
+
+Response UserHandler::userAuth(const Request& req)
+{
+    try
+    {
+        auto json = nlohmann::json::parse(req.boby);
+        std::string token = json["token"];
+
+        if(!openDB())
+        {
+            std::cerr << "БИБЕ сломалось\n";
+            return Response(400, "");
+        }
+
+        sqlite3_stmt* stmt;
+        std::string sql_query = "SELECT id FROM user_token WHERE token = ?;";
+
+        if(sqlite3_prepare_v2(db, sql_query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) // параметризированный запрос
+        {
+            std::cerr << "prepare error\n";
+            return Response(400, "DB error");
+        }
+
+        sqlite3_bind_text(stmt, 1, token.c_str(), -1, SQLITE_STATIC); // подстановка параметров
+
+        if (sqlite3_step(stmt) != SQLITE_ROW)
+        {
+            sqlite3_finalize(stmt);
+            return Response(401, "ты мошенник");
+        }
+
+        Response res;
+
+
+        return Response(400, "не повезло не фартануло");
+
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "ты мошенник\n";
+        return Response(400, "не повезло не фартануло");
+    }
+}
+
 
 bool UserHandler::openDB()
 {

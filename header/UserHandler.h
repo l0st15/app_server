@@ -17,7 +17,7 @@ private:
     Response userReg(const Request& req);
     Response userLogin(const Request& req);
     Response userInfo(const Request& req);
-    Response userPoll(const Request& req);
+    Response userAuth(const Request& req);
     bool openDB();
 };
 #endif //APP_SERVER_USERHANDLER_H
