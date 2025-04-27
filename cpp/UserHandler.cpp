@@ -2,6 +2,7 @@
 // Created by Даниил on 22.04.2025.
 //
 #include "UserHandler.h"
+#include <iostream>
 
 
 Response UserHandler::RequestProcesssing(const Request &req) {
@@ -20,7 +21,7 @@ Response UserHandler::RequestProcesssing(const Request &req) {
 }
 
 Response UserHandler::userReg(const Request &req) {
-    if(!openDB())
+    if(!db_module.openDB())
         return Response(400, "Bad request");
     else {
         try {
@@ -34,26 +35,15 @@ Response UserHandler::userReg(const Request &req) {
 
             std::string hash_password = crypto_module.hashPassword(password); // генерация хеша пароля
 
-            if(!openDB()) // открытие бд
+            if(!db_module.openDB()) // открытие бд
                 return Response(400, "Error open DB");
 
             std::string sql_query = "INSERT INTO user(login, hash_password) VALUES(?, ?)"; // тело запроса
-            sqlite3_stmt* stmt; // указатель на параметризованный запрос
-            // получение параметризованного запроса
-            if(sqlite3_prepare_v2(db, sql_query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-                std::cerr << "аааааа БИБЕ сломалось\n";
-                return Response(400, "Error DB");
-            }
-            sqlite3_bind_text(stmt, 1, login.c_str(), -1, SQLITE_STATIC); // подстановка логина
-            sqlite3_bind_text(stmt, 2, hash_password.c_str(), -1, SQLITE_STATIC); // подстановка пароля
 
-            if(sqlite3_step(stmt) != SQLITE_DONE) { // выполнение запроса
-                sqlite3_finalize(stmt); // удаление запроса
-                std::cerr << "User already exists\n";
-                return Response(400, "User already exists");
-            }
+            db_module.execQuery(sql_query, login, hash_password);
+            if(db_module.getStmt() == nullptr)
+                return Response(400, "что то пошло не так");
 
-            sqlite3_finalize(stmt); // удаление запроса
             return Response(201, "User registered");
 
         }
@@ -61,7 +51,7 @@ Response UserHandler::userReg(const Request &req) {
             std::cerr << e.what();
             return Response(400, "Bad request");
         }
-        closeDB();
+        db_module.closeDB();
     }
 }
 
@@ -87,53 +77,66 @@ Response UserHandler::userLogin(const Request &req) {
 
 }
 
+Response UserHandler::userGetInfo(const Request &req) {
+
+    auto json = nlohmann::json::parse(req.body);
+    std::string uuid = json["uuid"];
+    int iot_id = stoi(std::string(json["iot_id"]));
+    int id = userAuth(uuid);
+    if(id < 0)
+        return Response(401, "Ти мошенник");
+
+    int type = stoi(std::string(json["type"]));
+
+    if(!db_module.openDB())
+        return Response(401, "Ти мошенник");;
+
+    std::string sql_query;
+    sqlite3_stmt* stmt;
+
+    switch (type) {
+        case 1:
+            sql_query = "SELECT temp FROM data WHERE iot_id = ? ORDER BY created_at DESC LIMIT;";
+
+
+    }
+}
+
+int UserHandler::userAuth(const std::string& uuid) {
+
+    if(!db_module.openDB()) {
+        return -1;
+    }
+
+    std::string sql_query = "SELECT user_id FROM user_token WHERE token = ?;";
+    db_module.execQuery(sql_query, uuid);
+    if(db_module.getStmt() == nullptr)
+        return -1;
+
+    int id;
+    db_module.getDataDB(0, id);
+    db_module.closeDB();
+    return id;
+}
+
 std::string UserHandler::getUserHashPassword(const std::string& user_login) {
 
-    if(!openDB())
+    if(!db_module.openDB())
         return "";
 
     std::string sql_query = "SELECT hash_password FROM user WHERE login = ?;";
-    sqlite3_stmt* stmt;
-
-    if(sqlite3_prepare_v2(db, sql_query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-        std::cerr << "аааааа БИБЕ сломалось\n";
+    db_module.execQuery(sql_query, user_login);
+    if(db_module.getStmt() == nullptr)
         return "";
-    }
-    sqlite3_bind_text(stmt, 1, user_login.c_str(), -1, SQLITE_STATIC);
 
-    if (sqlite3_step(stmt) != SQLITE_ROW) {
-        sqlite3_finalize(stmt);
-        return "";
-    }
-    size_t length = sqlite3_column_bytes(stmt, 0);
-    std::string hash_password((const char*)sqlite3_column_text(stmt, 0), length);
+    std::string hash_password;
+    db_module.getDataDB(0, hash_password);
+    db_module.closeDB();
 
-    sqlite3_finalize(stmt);
-    closeDB();
     return hash_password;
 }
 
-bool UserHandler::openDB() {
-    if(sqlite3_open(R"(D:\study\project\app_server\database\server_db)", &db)) {
-        std::cerr << "Error open DB" << sqlite3_errmsg(db) << "\n";
-        return false;
-    }
-    else {
-        std::cerr << "Opened DB Successfully!\n";
-        return true;
-    }
-}
 
-bool UserHandler::closeDB() {
-    if(sqlite3_close(db)) {
-        std::cerr << "Error close DB" << sqlite3_errmsg(db) << "\n";
-        return false;
-    }
-    else {
-        std::cerr << "Opened DB Successfully!\n";
-        return true;
-    }
-}
 
 
 
