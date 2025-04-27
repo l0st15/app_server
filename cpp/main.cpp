@@ -5,13 +5,14 @@
 #include "UserHandler.h"
 #include "router.h"
 #include "IRequestHandler.h"
+#include "network.h"
 
 int main()
 {
     Request req;
-    req.method = "POST";
-    req.path = "/login";
-    req.body = R"({"login": "test", "password": "12345678"})";
+    Network net("127.0.0.1",47891);
+    net.recieveRequest(req);
+    std::cout<<req.body;
     router r;
     r.registerRoute("/reg", std::make_unique<UserHandler>());
     r.registerRoute("/login", std::make_unique<UserHandler>());

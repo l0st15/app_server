@@ -12,7 +12,7 @@ class Network
 public:
     Network(std::string ip, short port);
     ~Network();
-    int recieveRequest(Request *req);
+    int recieveRequest(Request &req);
     void sendResponse();
 protected:
     void closeAndClear(SOCKET sock);

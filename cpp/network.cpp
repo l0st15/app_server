@@ -33,7 +33,7 @@ void Network::closeAndClear()
 {
     WSACleanup();
 }
-int Network::recieveRequest(Request *req) {
+int Network::recieveRequest(Request &req) {
     if (FAILED(WSAStartup(MAKEWORD(2, 2), &sdata) != 0)) {
         std::cout << WSAGetLastError() << std::endl;
         closeAndClear();
@@ -78,7 +78,7 @@ int Network::recieveRequest(Request *req) {
     size_t headers_end = request.find("\r\n\r\n");
     size_t body_start = headers_end + 4;
     if (body_start <= request.size()) {
-        req->body = request.substr(body_start);
+        req.body = request.substr(body_start);
 
         std::smatch start_line_match;
         if (!std::regex_search(request, start_line_match, start_line_regex))
@@ -88,13 +88,14 @@ int Network::recieveRequest(Request *req) {
             return -8; //Зарезервировано под query params
 
 
-        req->method = start_line_match[1];
-        req->path = start_line_match[2];
-        req->http_version = start_line_match[4];
+        req.method = start_line_match[1];
+        req.path = start_line_match[2];
+        req.http_version = start_line_match[4];
         //TEMPORARY
         closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
         return 1;
     }
+    return 1;
 }
 
 //TODO sendResponse получает структуру и отправляет ее, затем завершает соединение
