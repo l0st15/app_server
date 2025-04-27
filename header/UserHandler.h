@@ -9,6 +9,7 @@
 #include "sqlite3.h"
 #include "json.hpp"
 #include "Crypto.h"
+#include "DBmanager.h"
 class UserHandler : public IRequestHandler
 {
 public:
@@ -16,12 +17,12 @@ public:
 private:
     sqlite3* db = nullptr;
     Crypto crypto_module;
+    DBmanager db_module;
+
     Response userReg(const Request& req);
     Response userLogin(const Request& req);
-    //Response userInfo(const Request& req);
-    //Response userAuth(const Request& req);
+    Response userGetInfo(const Request& req);
+    int userAuth(const std::string& uuid);
     std::string getUserHashPassword(const std::string& user_login);
-    bool openDB();
-    bool closeDB();
 };
 #endif //APP_SERVER_USERHANDLER_H
