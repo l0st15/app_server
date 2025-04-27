@@ -13,7 +13,7 @@ public:
     Network(std::string ip, short port);
     ~Network();
     int recieveRequest(Request &req);
-    void sendResponse();
+    int sendResponse(Response &res);
 protected:
     void closeAndClear(SOCKET sock);
     void closeAndClear(std::vector<SOCKET> socks);

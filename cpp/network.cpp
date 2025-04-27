@@ -16,7 +16,7 @@ Network::Network(std::string ip,short port)
 }
 Network::~Network()
 {
-
+    WSACleanup();
 }
 void Network::closeAndClear(SOCKET sock)
 {
@@ -94,6 +94,12 @@ int Network::recieveRequest(Request &req) {
     return 1;
 }
 
+int Network::sendResponse(Response &res)
+{
+    std::string http_response;
+
+    send(clientSock, http_response.c_str(), http_response.size(), 0);
+}
 //TODO sendResponse получает структуру и отправляет ее, затем завершает соединение
 //TODO совершить суицид
 //TODO ДОБАВИТЬ ПОТОЧНОСТЬ ИЛИ ОТСУТСТВИЕ БЛОКИРОВОК(???????)

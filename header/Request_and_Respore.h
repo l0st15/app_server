@@ -20,7 +20,8 @@ struct Request
 
 struct Response
 {
-    std::map<int, std::string> status; // статус выполнения запроса формата(код, сообщенеие)
+    int statusCode; // статус выполнения запроса формата(код)
+    std::string statusMessage; // статус выполнения запроса формата(Сообщение)
     std::map<std::string, std::string> headers; // заголовки формата (имя_заголовка, значение)
     int body_length = 0; // длинна тела ответа
     std::string body; // тело ответа
@@ -31,7 +32,8 @@ public:
     }
     Response(int code, const std::string& mes)
     {
-        status[code] = mes;
+        statusCode = code;
+        statusMessage = mes;
     }
 };
 
