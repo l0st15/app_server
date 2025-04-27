@@ -8,31 +8,15 @@
 
 int main()
 {
-    std::cout << "Hello";
-    if (sodium_init() < 0) {
-        /* panic! the library couldn't be initialized; it is not safe to use */
-        std::cout << "World";
-    }
-     Crypto test;
-
-    std::string test_uuid = test.uuidGen();
-    std::cout << "uuid: " << test_uuid << "\n";
-    std::string test_password = "12345678";
-    std::string hash = test.hashPassword(test_password);
-    std::cout << "Password: " << test_password << "\n" << "Hash: " << hash << "\n";
-    std::cout << "Verify: " << test.verifyPassword(hash, test_password) << "\n";
-    std::cout << "Valid uuid: " << test.isValidUuid(test_uuid);
-
     Request req;
-    req.path = "/reg";
     req.method = "POST";
-    std::string json_str = R"({"login": "test", "password": "1234"})";
-    req.boby = json_str;
+    req.path = "/login";
+    req.body = R"({"login": "test", "password": "12345678"})";
     router r;
-    IRequestHandler* handler = new UserHandler();
     r.registerRoute("/reg", std::make_unique<UserHandler>());
+    r.registerRoute("/login", std::make_unique<UserHandler>());
+    IRequestHandler* handler = r.route(req.path);
     Response res = handler->RequestProcesssing(req);
-    delete handler;
 
     return 0;
 }

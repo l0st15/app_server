@@ -13,7 +13,7 @@ struct Request
    std::string path; //путь к объекту доступа (куда общается пользователь например /user/id_user, /iot/id_iot)
    std::map<std::string, std::string> headers; // заголовки запроса формата (имя_заголовка, значение)
    std::string http_version; //версия протокла http
-   int boby_lenght = 0; // длинна тела запроса (по умолчанию 0)
+   int body_length = 0; // длинна тела запроса (по умолчанию 0)
    std::string body; //тело запроса (тут передаются данные)
    std::map<std::string, std::string> query_param; // парметры пути(в URL после ?)
 };
@@ -22,8 +22,8 @@ struct Response
 {
     std::map<int, std::string> status; // статус выполнения запроса формата(код, сообщенеие)
     std::map<std::string, std::string> headers; // заголовки формата (имя_заголовка, значение)
-    int boby_lenght = 0; // длинна тела ответа
-    std::string boby; // тело ответа
+    int body_length = 0; // длинна тела ответа
+    std::string body; // тело ответа
 public:
     Response()
     {

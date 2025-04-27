@@ -24,7 +24,7 @@ Response UserHandler::userReg(const Request &req) {
         return Response(400, "Bad request");
     else {
         try {
-            auto json = nlohmann::json::parse(req.boby); // парсинг тела запроса
+            auto json = nlohmann::json::parse(req.body); // парсинг тела запроса
             // получаем логи и пароль
             std::string login = json["login"];
             std::string password = json["password"];
@@ -67,7 +67,7 @@ Response UserHandler::userReg(const Request &req) {
 
 Response UserHandler::userLogin(const Request &req) {
 
-    auto json = nlohmann::json::parse(req.boby);
+    auto json = nlohmann::json::parse(req.body);
     std::string login = json["login"];
     std::string password = json["password"];
 
@@ -79,7 +79,8 @@ Response UserHandler::userLogin(const Request &req) {
         nlohmann::json user_uuid;
         user_uuid["uuid"] = crypto_module.uuidGen();
         Response res(200, "OK");
-        res.boby = user_uuid.dump();
+        res.body = user_uuid.dump();
+        res.body_length = res.body.size();
         return res;
     } else
         return Response(401, "ТИ Мошенник");
@@ -91,7 +92,6 @@ std::string UserHandler::getUserHashPassword(const std::string& user_login) {
     if(!openDB())
         return "";
 
-    std::string hash_password;
     std::string sql_query = "SELECT hash_password FROM user WHERE login = ?;";
     sqlite3_stmt* stmt;
 
@@ -105,14 +105,16 @@ std::string UserHandler::getUserHashPassword(const std::string& user_login) {
         sqlite3_finalize(stmt);
         return "";
     }
-    hash_password = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+    size_t length = sqlite3_column_bytes(stmt, 0);
+    std::string hash_password((const char*)sqlite3_column_text(stmt, 0), length);
+
     sqlite3_finalize(stmt);
     closeDB();
     return hash_password;
 }
 
 bool UserHandler::openDB() {
-    if(sqlite3_open("database/server_db.db", &db)) {
+    if(sqlite3_open(R"(D:\study\project\app_server\database\server_db)", &db)) {
         std::cerr << "Error open DB" << sqlite3_errmsg(db) << "\n";
         return false;
     }
