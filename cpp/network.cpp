@@ -96,9 +96,16 @@ int Network::recieveRequest(Request &req) {
 
 int Network::sendResponse(Response &res)
 {
-    std::string http_response;
-
+    std::string http_response = "HTTP/1.1 ";
+    http_response += std::to_string(res.statusCode);
+    http_response += "" + res.statusMessage + "\r\n";
+    http_response += "Content-Type: application/json\r\n";
+    http_response += "Content-Length: " + std::to_string(res.body_length);
+    http_response += "Connection: close\r\n\r\n";
+    http_response += res.body;
     send(clientSock, http_response.c_str(), http_response.size(), 0);
+    closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
+    return 1;
 }
 //TODO sendResponse получает структуру и отправляет ее, затем завершает соединение
 //TODO совершить суицид
