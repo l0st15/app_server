@@ -25,10 +25,21 @@ private:
     std::string getUserHashPassword(const std::string& user_login);
 };
 
-typedef struct Data_iot {
+struct Data_iot {
     double temp;
     int lamp1;
     int lamp2;
     std::string timestamp;
+
+   /* Data_iot& operator=(const Data_iot& data) {
+
+        if(&data != this) {
+            temp = data.temp;
+            lamp1 = data.lamp1;
+            lamp2 = data.lamp2;
+            timestamp = data.timestamp;
+        }
+        return *this;
+    };*/
 };
 #endif //APP_SERVER_USERHANDLER_H

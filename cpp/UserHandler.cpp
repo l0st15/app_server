@@ -89,22 +89,31 @@ Response UserHandler::userGetInfo(const Request &req) {
     int type = stoi(std::string(json["type"]));
 
     if(!db_module.openDB())
-        return Response(401, "Ти мошенник");;
+        return Response(401, "Ти мошенник");
 
     std::string sql_query;
     sqlite3_stmt* stmt;
 
     switch (type) {
-        case 1:
-
+        case 1: {
             sql_query = "SELECT temp, timestamp FROM data WHERE iot_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT;";
             db_module.openDB();
             db_module.execQuery(sql_query, iot_id, user_id);
-            Data_iot current_data;
-            current_data = db_module.getDataDB();
+            Data_iot current_data = db_module.getData();
+            db_module.closeDB();
+            nlohmann::json res_boby;
+            res_boby["iot_id"] = iot_id;
+            res_boby["data"] = nlohmann::json::array({{"temp",      current_data.temp},
+                                                      {"lamp1",     current_data.lamp1},
+                                                      {"lamp2",     current_data.lamp2},
+                                                      {"timestamp", current_data.timestamp}});
+            Response res(200, "OK");
+            res.body = res_boby.dump();
 
-
+            return res;
+        }
         default:
+            return Response(401, "Ти мошенник");
 
 
 

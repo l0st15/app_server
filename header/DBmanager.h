@@ -25,7 +25,7 @@ public:
     void execQuery(const std::string& sql_query, const std::string& param1, const std::string& param2);
     void getDataDB(unsigned int col_id, int& value);
     void getDataDB(unsigned int col_id, std::string& value);
-    Data_iot getDataDB();
+    Data_iot getData();
 };
 
 #endif //APP_SERVER_DBMANAGER_H

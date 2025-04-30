@@ -112,7 +112,7 @@ void DBmanager::getDataDB(unsigned int col_id, std::string& value) {
 
 }
 
-Data_iot DBmanager::getDataDB() {
+Data_iot DBmanager::getData() {
 
     Data_iot value;
     if(stmt != nullptr) {
