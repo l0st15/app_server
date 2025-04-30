@@ -15,7 +15,6 @@ class UserHandler : public IRequestHandler
 public:
     Response RequestProcesssing(const Request& request);
 private:
-    sqlite3* db = nullptr;
     Crypto crypto_module;
     DBmanager db_module;
 
@@ -24,5 +23,12 @@ private:
     Response userGetInfo(const Request& req);
     int userAuth(const std::string& uuid);
     std::string getUserHashPassword(const std::string& user_login);
+};
+
+typedef struct Data_iot {
+    double temp;
+    int lamp1;
+    int lamp2;
+    std::string timestamp;
 };
 #endif //APP_SERVER_USERHANDLER_H

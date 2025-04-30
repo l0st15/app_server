@@ -82,8 +82,8 @@ Response UserHandler::userGetInfo(const Request &req) {
     auto json = nlohmann::json::parse(req.body);
     std::string uuid = json["uuid"];
     int iot_id = stoi(std::string(json["iot_id"]));
-    int id = userAuth(uuid);
-    if(id < 0)
+    int user_id = userAuth(uuid);
+    if(user_id < 0)
         return Response(401, "Ти мошенник");
 
     int type = stoi(std::string(json["type"]));
@@ -96,7 +96,16 @@ Response UserHandler::userGetInfo(const Request &req) {
 
     switch (type) {
         case 1:
-            sql_query = "SELECT temp FROM data WHERE iot_id = ? ORDER BY created_at DESC LIMIT;";
+
+            sql_query = "SELECT temp, timestamp FROM data WHERE iot_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT;";
+            db_module.openDB();
+            db_module.execQuery(sql_query, iot_id, user_id);
+            Data_iot current_data;
+            current_data = db_module.getDataDB();
+
+
+        default:
+
 
 
     }
