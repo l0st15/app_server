@@ -112,19 +112,6 @@ void DBmanager::getDataDB(unsigned int col_id, std::string& value) {
 
 }
 
-Data_iot DBmanager::getData() {
 
-    Data_iot value;
-    if(stmt != nullptr) {
-        value.temp = sqlite3_column_double(stmt, 3);
-        value.lamp1 = sqlite3_column_int(stmt, 4);
-        value.lamp2 = sqlite3_column_int(stmt, 5);
-        size_t length = sqlite3_column_bytes(stmt, 6);
-        std::string buf((const char*)sqlite3_column_text(stmt, 6), length);
-        value.timestamp = buf;
-    }
-
-    return value;
-}
 
 

@@ -14,7 +14,6 @@ set(SQLITE_LIBRARY "${CMAKE_SOURCE_DIR}/lib/sqlite3.dll")
 
 add_executable(app_server cpp/main.cpp
         header/IRequestHandler.h
-        header/Request_and_Respore.h
         header/router.h
         header/UserHandler.h
         cpp/UserHandler.cpp
@@ -23,7 +22,8 @@ add_executable(app_server cpp/main.cpp
         header/Crypto.h
         cpp/Crypto.cpp
         header/DBmanager.h
-        cpp/DBmanager.cpp)
+        cpp/DBmanager.cpp
+        header/Units.h)
 
 target_link_libraries(app_server PRIVATE ws2_32)
 target_include_directories(app_server PRIVATE ${SODIUM_INCLUDE_DIR})

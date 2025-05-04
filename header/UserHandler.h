@@ -4,8 +4,8 @@
 
 #ifndef APP_SERVER_USERHANDLER_H
 #define APP_SERVER_USERHANDLER_H
-#include "Request_and_Respore.h"
 #include "IRequestHandler.h"
+#include "Units.h"
 #include "sqlite3.h"
 #include "json.hpp"
 #include "Crypto.h"
@@ -25,21 +25,5 @@ private:
     std::string getUserHashPassword(const std::string& user_login);
 };
 
-struct Data_iot {
-    double temp;
-    int lamp1;
-    int lamp2;
-    std::string timestamp;
 
-   /* Data_iot& operator=(const Data_iot& data) {
-
-        if(&data != this) {
-            temp = data.temp;
-            lamp1 = data.lamp1;
-            lamp2 = data.lamp2;
-            timestamp = data.timestamp;
-        }
-        return *this;
-    };*/
-};
 #endif //APP_SERVER_USERHANDLER_H
