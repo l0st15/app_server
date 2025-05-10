@@ -27,6 +27,7 @@ public:
     void execQuery(const std::string& sql_query, const std::string& param1, const std::string& param2);
     void execQuery(const std::string& sql_query, const int& param1, const int& param2,
                    const std::string& param3, const std::string& param4);
+    void execQuery(const std::string & sql_query, const int& param1, const std::string& param2);
     void getDataDB(unsigned int col_id, int& value);
     void getDataDB(unsigned int col_id, std::string& value);
     data_iot getDataDB();

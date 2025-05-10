@@ -145,6 +145,22 @@ data_iot DBmanager::getDataDB() {
     return data;
 }
 
+void DBmanager::execQuery(const std::string &sql_query, const int &param1, const std::string &param2) {
+
+    if(sqlite3_prepare_v2(db, sql_query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "аааааа БИБЕ сломалось\n";
+        stmt = nullptr;
+    }
+
+    sqlite3_bind_int(stmt, 1, param1);
+    sqlite3_bind_text(stmt, 2, param2.c_str(), -1, SQLITE_STATIC);
+
+    if (sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_finalize(stmt);
+        stmt =  nullptr;
+    }
+}
+
 
 
 

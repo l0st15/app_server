@@ -15,13 +15,13 @@ class UserHandler : public IRequestHandler
 {
 public:
     Response RequestProcesssing(const Request& req) override;
+    int userAuth(const std::string& uuid);
 private:
     Crypto crypto_module;
     DBmanager db_module;
     Response userReg(const Request& req);
     Response userLogin(const Request& req);
     Response userGetInfo(const Request& req);
-    int userAuth(const std::string& uuid);
     std::string getUserHashPassword(const std::string& user_login);
 };
 
