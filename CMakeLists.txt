@@ -23,7 +23,9 @@ add_executable(app_server cpp/main.cpp
         cpp/Crypto.cpp
         header/DBmanager.h
         cpp/DBmanager.cpp
-        header/Units.h)
+        header/Units.h
+        header/IotHandler.h
+        cpp/IotHandler.cpp)
 
 target_link_libraries(app_server PRIVATE ws2_32)
 target_include_directories(app_server PRIVATE ${SODIUM_INCLUDE_DIR})

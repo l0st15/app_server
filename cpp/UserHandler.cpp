@@ -11,8 +11,8 @@ Response UserHandler::RequestProcesssing(const Request &req) {
             return userReg(req);
         else if(req.path == "/login")
             return userLogin(req);
-        //else if(req.path == "/get_info")
-          //  return userInfo(req);
+        else if(req.path == "/get_info")
+            return userGetInfo(req);
         else
             return Response(405, "Method Not Allowed");
     }
