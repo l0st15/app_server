@@ -18,7 +18,7 @@ int main()
     r.registerRoute("/login", std::make_unique<UserHandler>());
     IRequestHandler* handler = r.route(req.path);
     Response res = handler->RequestProcesssing(req);
-
+    //TODO проверить работоспосбность
     return 0;
 }
 
