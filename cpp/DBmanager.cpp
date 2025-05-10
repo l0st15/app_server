@@ -95,6 +95,26 @@ void DBmanager::execQuery(const std::string& sql_query, const std::string& param
     }
 }
 
+void DBmanager::execQuery(const std::string& sql_query, const int& param1, const int& param2,
+               const std::string& param3, const std::string& param4) {
+
+    if(sqlite3_prepare_v2(db, sql_query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "аааааа БИБЕ сломалось\n";
+        stmt = nullptr;
+    }
+
+    sqlite3_bind_int(stmt, 1, param1);
+    sqlite3_bind_int(stmt, 2, param2);
+    sqlite3_bind_text(stmt, 3, param3.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 4, param4.c_str(), -1, SQLITE_STATIC);
+
+    if (sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_finalize(stmt);
+        stmt =  nullptr;
+    }
+
+}
+
 void DBmanager::getDataDB(unsigned int col_id, int& value) {
 
     if(stmt != nullptr)
@@ -110,6 +130,19 @@ void DBmanager::getDataDB(unsigned int col_id, std::string& value) {
         value = buf;
     }
 
+}
+
+data_iot DBmanager::getDataDB() {
+    data_iot data;
+    if(stmt != nullptr) {
+        data.temp = sqlite3_column_double(stmt, 3);
+        data.lamp1 = sqlite3_column_int(stmt, 4);
+        data.lamp2 = sqlite3_column_int(stmt, 5);
+        size_t length = sqlite3_column_bytes(stmt, 6);
+        std::string buf((const char*)sqlite3_column_text(stmt, 6), length);
+        data.timestamp = buf;
+    }
+    return data;
 }
 
 

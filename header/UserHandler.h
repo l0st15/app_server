@@ -10,14 +10,14 @@
 #include "json.hpp"
 #include "Crypto.h"
 #include "DBmanager.h"
+
 class UserHandler : public IRequestHandler
 {
 public:
-    Response RequestProcesssing(const Request& request);
+    Response RequestProcesssing(const Request& request) override;
 private:
     Crypto crypto_module;
     DBmanager db_module;
-
     Response userReg(const Request& req);
     Response userLogin(const Request& req);
     Response userGetInfo(const Request& req);

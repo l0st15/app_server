@@ -95,19 +95,47 @@ Response UserHandler::userGetInfo(const Request &req) {
     sqlite3_stmt* stmt;
 
     switch (type) {
-        case 1: {
-            sql_query = "SELECT temp, timestamp FROM data WHERE iot_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT;";
+        case 0: {
+            sql_query = "SELECT temp, lamp1, lamp2, timestamp FROM data "
+                        "WHERE iot_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT;";
             db_module.openDB();
             db_module.execQuery(sql_query, iot_id, user_id);
+            data_iot data = db_module.getDataDB();
+            db_module.closeDB();
+            nlohmann::json json_data;
+            json_data["data"] = {{"temp", data.temp}, {"lamp1", data.lamp1}, {"lamp2", data.lamp2},
+                                 {"timestamp", data.timestamp}};
+            Response res;
+            res.body = json_data.dump();
 
+            return  res;
+        }
+        case 2: {
+            std::string start = json["start"];
+            std::string end = json["end"];
 
+            sql_query = "SELECT temp, lamp1, lamp2, timestamp FROM data "
+                        "WHERE iot_id = ? AND user_id = ? AND timestamp BETWEEN ? AND ?;";
+            db_module.openDB();
+            db_module.execQuery(sql_query, iot_id, user_id, start, end);
+            nlohmann::json j_data;
+            j_data["data"] = nlohmann::json::array();
+            while (sqlite3_step(db_module.getStmt()) == SQLITE_ROW) {
+                data_iot data = db_module.getDataDB();
+                j_data["data"].push_back({
+                                                 {"temp",      data.temp},
+                                                 {"lamp1",     data.lamp1},
+                                                 {"lamp2",     data.lamp2},
+                                                 {"timestamp", data.timestamp},
+                                         });
+            };
 
+            Response res;
+            res.body = j_data.dump();
+            return res;
         }
         default:
             return Response(401, "Ти мошенник");
-
-
-
     }
 }
 
