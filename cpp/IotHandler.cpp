@@ -35,6 +35,10 @@ Response IotHandler::controlLamp(const Request &req) {
 }
 
 Response IotHandler::polling(const Request &req) {
+    auto json = nlohmann::json::parse(req.body);
+    double temp = std::stod(to_string(json["temp"]));
+    std::string sql_query = "INSERT INTO ";
+
     return Response(405, "Method Not Allowed");
 }
 
