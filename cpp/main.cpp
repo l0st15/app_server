@@ -6,6 +6,7 @@
 #include "router.h"
 #include "IRequestHandler.h"
 #include "network.h"
+#include "DBManager.h"
 
 int main()
 {
@@ -22,7 +23,7 @@ int main()
     std::cout<<net.sendResponse(res)<<std::endl; */
     try {
         DBManager test;
-        test.execute("INSERT INTO user (login, hash) VALUES (?, ?)", "test", "12345");
+        test.execute("INSERT INTO user (login, hash) VALUES (?, ?)", std::string("test"), std::string("12345"));
     } catch (const std::exception& e) {
         std::cout << e.what();
     }
