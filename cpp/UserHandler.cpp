@@ -22,7 +22,7 @@ Response UserHandler::RequestProcesssing(const Request &req) {
 
 Response UserHandler::userReg(const Request &req) {
     if(!db_module.openDB())
-        return Response(400, "Bad request");
+        return Response(503, "Service Unavailable");
     else {
         try {
             auto json = nlohmann::json::parse(req.body); // парсинг тела запроса
@@ -31,25 +31,25 @@ Response UserHandler::userReg(const Request &req) {
             std::string password = json["password"];
 
             if(login.empty() || password.empty())
-                return Response(400, "Login and password are required");
+                return Response(403, "Forbidden");
 
             std::string hash_password = crypto_module.hashPassword(password); // генерация хеша пароля
 
             if(!db_module.openDB()) // открытие бд
-                return Response(400, "Error open DB");
+                return Response(503, "Error open DB");
 
             std::string sql_query = "INSERT INTO user(login, hash_password) VALUES(?, ?)"; // тело запроса
 
             db_module.execQuery(sql_query, login, hash_password);
             if(db_module.getStmt() == nullptr)
-                return Response(400, "что то пошло не так");
+                return Response(500, "Something went wrong");
 
             return Response(201, "User registered");
 
         }
         catch (const std::exception& e) {
             std::cerr << e.what();
-            return Response(400, "Bad request");
+            return Response(500, "Internal Server Error");
         }
         db_module.closeDB();
     }
@@ -62,7 +62,7 @@ Response UserHandler::userLogin(const Request &req) {
     std::string password = json["password"];
 
     if(login.empty() || password.empty())
-        return Response(400, "Login and password are required");
+        return Response(403, "Forbidden");
 
     std::string hash_password = getUserHashPassword(login);
     if(crypto_module.verifyPassword(hash_password, password)) {
@@ -89,7 +89,7 @@ Response UserHandler::userGetInfo(const Request &req) {
     int type = stoi(std::string(json["type"]));
 
     if(!db_module.openDB())
-        return Response(401, "Ти мошенник");
+        return Response(503, "Error open DB");
 
     std::string sql_query;
     sqlite3_stmt* stmt;
@@ -135,7 +135,7 @@ Response UserHandler::userGetInfo(const Request &req) {
             return res;
         }
         default:
-            return Response(401, "Ти мошенник");
+            return Response(404, "Content not found");
     }
 }
 

@@ -71,6 +71,7 @@ int Network::recieveRequest(Request &req) {
     }
     packet_size = recv(clientSock, servBuff.data(), servBuff.size(), 0);
     std::string request(servBuff.begin(), servBuff.end());
+    printf(request.c_str());
     //первая строка
     std::regex start_line_regex(R"(^([A-Z]+)\s+([^?# ]*)(?:\?([^ ]*))?\s+(HTTP/\d+\.\d+)\r\n)", std::regex::icase);
     //TODO сделать обработку query params
