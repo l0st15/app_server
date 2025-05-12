@@ -27,6 +27,7 @@ public:
         if (db) {
             sqlite3_close(db);
             db = nullptr;
+        }
     } // Закрыть БД
 
     template<typename... Args>
@@ -52,7 +53,7 @@ public:
     } // выполнение запросов с возращаемымм значением
 
     DBManager() {
-        open("database/data.sqlite");
+        open("D:/study/project/app_server/database/data.sqlite");
     } // конструктор по умолчанию
 
     ~DBManager() {
@@ -70,12 +71,16 @@ private:
 
     template<typename T>
     void bind(int pos, T&& value) {
-        if constexpr (std::is_integral_v<T>) {
+        using DecayedT = std::decay_t<T>;
+
+        if constexpr (std::is_integral_v<DecayedT>) {
             sqlite3_bind_int(stmt, pos, value);
-        } else if constexpr (std::is_floating_point_v<T>) {
+        } else if constexpr (std::is_floating_point_v<DecayedT>) {
             sqlite3_bind_double(stmt, pos, value);
-        } else if constexpr (std::is_same_v<T, std::string>) {
+        } else if constexpr (std::is_same_v<DecayedT, std::string>) {
             sqlite3_bind_text(stmt, pos, value.c_str(), value.size(), SQLITE_TRANSIENT);
+        } else if constexpr (std::is_convertible_v<T, const char*>) {
+            sqlite3_bind_text(stmt, pos, value, -1, SQLITE_TRANSIENT);
         } else {
             static_assert(sizeof(T) == 0, "Unsupported parameter type");
         }
