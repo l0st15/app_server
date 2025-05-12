@@ -22,6 +22,8 @@ add_executable(app_server cpp/main.cpp
         header/Crypto.h
         cpp/Crypto.cpp
         header/Units.h
+        header/DBManager.h
+        cpp/DBManager.cpp
 )
 
 target_link_libraries(app_server PRIVATE ws2_32)

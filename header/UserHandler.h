@@ -24,5 +24,4 @@ private:
     std::string getUserHashPassword(const std::string& user_login); // получение пароля из бд
 };
 
-
 #endif //APP_SERVER_USERHANDLER_H
