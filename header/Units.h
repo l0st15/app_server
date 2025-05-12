@@ -17,6 +17,12 @@ struct data_iot {
     std::string timestamp;
 };
 
+std::map<int, std::string> commands { {1, "power_off"}
+                            ,{2, "lamp1_on"}
+                            ,{3, "lamp1_off"}
+                            ,{4, "lamp2_on"}
+                            ,{5, "lamp2_off"}};
+
 struct Request
 {
     std::string method; //что надо сделать (GET, PUT, POST)
