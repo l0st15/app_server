@@ -91,7 +91,10 @@ int Network::recieveRequest(Request &req) {
     size_t headers_end = request.find("\r\n\r\n");
     size_t body_start = headers_end + 4;
     if (body_start <= request.size()) {
-        req.body = request.substr(body_start,req.body_length);
+        std::string body = request.substr(body_start,req.body_length);
+        body.erase(std::remove(body.begin(), body.end(), '\\'),body.end());
+        body = body.substr(1,body.length()-2);
+        req.body = body;
     }
     //TEMPORARY
     //closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
