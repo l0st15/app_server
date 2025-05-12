@@ -10,18 +10,20 @@
 #include "sqlite3.h"
 #include "json.hpp"
 #include "Crypto.h"
+#include "DBManager.h"
 
 class UserHandler : public IRequestHandler
 {
 public:
     Response RequestProcesssing(const Request& req) override;
-    int userAuth(const std::string& uuid); //проверка uuid
 private:
     Crypto crypto_module;
+    DBManager dbManager;
     Response userReg(const Request& req); // регистрация пользователя
     Response userLogin(const Request& req); // вход в аккаунт
     Response userGetInfo(const Request& req); //получени данных из бд
-    std::string getUserHashPassword(const std::string& user_login); // получение пароля из бд
+    Response sendCommand(const Request& req); //управление iot
+    int userAuth(const std::string& uuid); // проверка токена
 };
 
 #endif //APP_SERVER_USERHANDLER_H

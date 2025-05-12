@@ -37,9 +37,11 @@ std::vector<T> DBManager::query(const std::string &sql, Args &&...args) {
     return results;
 
 }
-DBManager::~DBManager() {
+
+DBManager::DBManager() {
     open("database/data.sqlite");
 }
+
 DBManager::~DBManager() {
     finalize();
     close();
