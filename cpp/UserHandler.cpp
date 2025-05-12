@@ -25,7 +25,10 @@ Response UserHandler::userReg(const Request &req) {
         return Response(503, "Service Unavailable");
     else {
         try {
-            auto json = nlohmann::json::parse(req.body); // парсинг тела запроса
+            std::string body = req.body;
+            body.erase(std::remove(body.begin(), body.end(), '\\'),body.end());
+            std::cout<<body<<std::endl;
+            auto json = nlohmann::json::parse(body.c_str()); // парсинг тела запроса
             // получаем логи и пароль
             std::string login = json["login"];
             std::string password = json["password"];
