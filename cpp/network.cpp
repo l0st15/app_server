@@ -90,21 +90,27 @@ int Network::recieveRequest(Request &req) {
     req.path = start_line_match[2];
     req.http_version = start_line_match[4];
     //TEMPORARY
-    closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
+    //closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
     return 1;
 }
 
 int Network::sendResponse(Response &res)
 {
     std::string http_response = "HTTP/1.1 ";
-    http_response += std::to_string(res.statusCode);
+    http_response += std::to_string(res.statusCode) + " ";
     http_response += "" + res.statusMessage + "\r\n";
     http_response += "Content-Type: application/json\r\n";
     http_response += "headerForSasha: U+1F4A9\r\n";
-    http_response += "Content-Length: " + std::to_string(res.body_length);
+    http_response += "Content-Length: " + std::to_string(res.body_length)+ "\r\n";
     http_response += "Connection: close\r\n\r\n";
     http_response += res.body;
-    send(clientSock, http_response.c_str(), http_response.size(), 0);
+
+    if (SOCKET_ERROR == (send(clientSock, http_response.c_str(), http_response.size(), 0)))
+    {
+        closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
+        return WSAGetLastError();
+    }
+    shutdown(srvSock,SD_BOTH);
     closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
     return 1;
 }
