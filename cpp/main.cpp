@@ -9,6 +9,7 @@
 
 int main()
 {
+    /*
     Request req;
     Network net("127.0.0.1",47891);
     std::cout<<net.recieveRequest(req)<<std::endl;
@@ -18,7 +19,16 @@ int main()
     r.registerRoute("/login", std::make_unique<UserHandler>());
     IRequestHandler* handler = r.route(req.path);
     Response res = handler->RequestProcesssing(req);
-    std::cout<<net.sendResponse(res)<<std::endl;
+    std::cout<<net.sendResponse(res)<<std::endl; */
+    try {
+        DBManager test;
+        test.execute("INSERT INTO user (login, hash) VALUES (?, ?)", "test", "12345");
+    } catch (const std::exception& e) {
+        std::cout << e.what();
+    }
+
+
+
     //TODO проверить работоспосбность
     return 0;
 }

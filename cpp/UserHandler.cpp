@@ -4,7 +4,7 @@
 #include "UserHandler.h"
 #include <iostream>
 
-
+/*
 Response UserHandler::RequestProcesssing(const Request &req) {
     if(req.method == "POST") {
         if(req.path == "/reg")
@@ -20,7 +20,7 @@ Response UserHandler::RequestProcesssing(const Request &req) {
         return Response(405, "Method Not Allowed");
 }
 
-
+*/
 
 
 
