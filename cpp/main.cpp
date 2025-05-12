@@ -12,7 +12,7 @@ int main()
     Request req;
     Network net("127.0.0.1",47891);
     std::cout<<net.recieveRequest(req)<<std::endl;
-    std::cout<<req.body<<std::endl;
+    std::cout<<"Body: "<<req.body<<"EOB"<<std::endl;
     router r;
     r.registerRoute("/reg", std::make_unique<UserHandler>());
     r.registerRoute("/login", std::make_unique<UserHandler>());

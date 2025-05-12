@@ -71,25 +71,28 @@ int Network::recieveRequest(Request &req) {
     }
     packet_size = recv(clientSock, servBuff.data(), servBuff.size(), 0);
     std::string request(servBuff.begin(), servBuff.end());
-    printf(request.c_str());
     //первая строка
     std::regex start_line_regex(R"(^([A-Z]+)\s+([^?# ]*)(?:\?([^ ]*))?\s+(HTTP/\d+\.\d+)\r\n)", std::regex::icase);
-    //TODO сделать обработку query params
-    //body and TODO content-length
-    size_t headers_end = request.find("\r\n\r\n");
-    size_t body_start = headers_end + 4;
-    if (body_start <= request.size()) {
-        req.body = request.substr(body_start);
-    }
+    //CONTENT LENGTH
+    std::regex cl_regex(R"(Content-Length:\s*(\d+))", std::regex::icase);
+    std::smatch cl_match;
     std::smatch start_line_match;
     if (!std::regex_search(request, start_line_match, start_line_regex))
         return -6;
+    if (!std::regex_search(request, cl_match, cl_regex))
+        return -7;
     if (false)
         return -8; //Зарезервировано под query params
-
+    req.body_length = std::stoi(cl_match[1]);
     req.method = start_line_match[1];
     req.path = start_line_match[2];
     req.http_version = start_line_match[4];
+    //body
+    size_t headers_end = request.find("\r\n\r\n");
+    size_t body_start = headers_end + 4;
+    if (body_start <= request.size()) {
+        req.body = request.substr(body_start,req.body_length);
+    }
     //TEMPORARY
     //closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
     return 1;
