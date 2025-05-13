@@ -10,7 +10,7 @@
 #include <string>
 #include <map>
 
-struct data_iot {
+struct data {
     double temp;
     int lamp1;
     int lamp2;

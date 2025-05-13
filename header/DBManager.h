@@ -106,6 +106,16 @@ private:
         }
     } // извлечение данных из строки
 
+    template<>
+    data extractRow() {
+        return {
+            sqlite3_column_double(stmt, 0),   // temp
+            sqlite3_column_int(stmt, 1) != 0, // lamp1
+            sqlite3_column_int(stmt, 2) != 0, // lamp2
+            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)) // timestamp
+        };
+    } // спецификация шаблона под тип данных data
+
     int executeStep() {
         int step = sqlite3_step(stmt);
         if(step != SQLITE_ROW && step != SQLITE_DONE) {
