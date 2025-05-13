@@ -17,6 +17,11 @@ struct data {
     std::string timestamp;
 };
 
+struct Command {
+    int id;
+    std::string cmd;
+};
+
 inline std::map<int, std::string> commands { {1, "power_off"}
                             ,{2, "lamp1_on"}
                             ,{3, "lamp1_off"}
