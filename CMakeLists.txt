@@ -23,6 +23,8 @@ add_executable(app_server cpp/main.cpp
         cpp/Crypto.cpp
         header/Units.h
         header/DBManager.h
+        header/IotHandler.h
+        cpp/IotHandler.cpp
 )
 
 target_link_libraries(app_server PRIVATE ws2_32)
