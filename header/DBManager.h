@@ -134,4 +134,12 @@ inline data DBManager::extractRow<data>() {
     };
 } // спецификация шаблона под тип данных data
 
+template<>
+inline Command DBManager::extractRow<Command>() {
+    return {
+            sqlite3_column_int(stmt, 0),
+            std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)))
+    };
+}
+
 #endif //APP_SERVER_DBMANAGER_H
