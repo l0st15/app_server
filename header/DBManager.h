@@ -11,6 +11,7 @@
 #include <vector>
 #include <utility>
 #include <type_traits>
+#include "Units.h"
 
 class DBManager {
     sqlite3* db = nullptr;
@@ -61,6 +62,19 @@ public:
         close();
     } // деструктор
 
+    template<typename T>
+    T extractRow() {
+        if constexpr (std::is_same_v<T, std::string>) {
+            return reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        } else if constexpr (std::is_integral_v<T>) {
+            return sqlite3_column_int(stmt, 0);
+        } else if constexpr (std::is_floating_point_v<T>) {
+            return sqlite3_column_double(stmt, 0);
+        } else {
+            static_assert(sizeof(T) == 0, "Unsupported result type");
+        }
+    } // извлечение данных из строки
+
 private:
     void prepare(const std::string& sql) {
         finalize();
@@ -93,28 +107,6 @@ private:
     } // подстановка параметров
 
     void bindParameters(int pos) {} // базовый случай подстановки для реализации рекурсивного вызова
-    template<typename T>
-    T extractRow() {
-        if constexpr (std::is_same_v<T, std::string>) {
-            return reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        } else if constexpr (std::is_integral_v<T>) {
-            return sqlite3_column_int(stmt, 0);
-        } else if constexpr (std::is_floating_point_v<T>) {
-            return sqlite3_column_double(stmt, 0);
-        } else {
-            static_assert(sizeof(T) == 0, "Unsupported result type");
-        }
-    } // извлечение данных из строки
-
-    template<>
-    data extractRow() {
-        return {
-            sqlite3_column_double(stmt, 0),   // temp
-            sqlite3_column_int(stmt, 1) != 0, // lamp1
-            sqlite3_column_int(stmt, 2) != 0, // lamp2
-            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)) // timestamp
-        };
-    } // спецификация шаблона под тип данных data
 
     int executeStep() {
         int step = sqlite3_step(stmt);
@@ -131,5 +123,15 @@ private:
         }
     } // очистка мусора
 };
+
+template<>
+inline data DBManager::extractRow<data>() {
+    return {
+            sqlite3_column_double(stmt, 0),   // temp
+            sqlite3_column_int(stmt, 1) != 0, // lamp1
+            sqlite3_column_int(stmt, 2) != 0, // lamp2
+            std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3))) // timestamp
+    };
+} // спецификация шаблона под тип данных data
 
 #endif //APP_SERVER_DBMANAGER_H
