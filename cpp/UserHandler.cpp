@@ -162,7 +162,7 @@ Response UserHandler::userGetInfo(const Request &req) {
             std::string start = json["start"];
             std::string  end = json["end"];  //TODO проверку что start < end
             std::string sql = "SELECT temp, lamp1, lamp2, timestamp FROM data_iot WHERE iot_id = ? AND timestamp BETWEEN ? AND ?";
-            auto iot_data = dbManager.query<data>(sql, user_id, start, end);
+            auto iot_data = dbManager.query<data>(sql, iot_id, start, end);
 
             if (iot_data.empty())
                 throw std::runtime_error("No data");
@@ -236,7 +236,7 @@ int UserHandler::userAuth(const std::string &uuid) {
     if(!crypto_module.isValidUuid(uuid))
         throw std::invalid_argument("UUID is not valid");
 
-    auto id = dbManager.query<int>("SELECT id FROM token WHERE token = ?", uuid);
+    auto id = dbManager.query<int>("SELECT user_id FROM token WHERE token = ?", uuid);
 
     if(id.empty())
         throw std::invalid_argument("User not found");
@@ -252,5 +252,6 @@ int UserHandler::userAuth(const std::string &uuid) {
 //TODO нормальные коды HTTP (для БАБУ)
 //TODO ОБработка ошибок json
 //TODO Исключения
+//TODO время жизни токена
 
 
