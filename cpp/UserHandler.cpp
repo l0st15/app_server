@@ -22,8 +22,7 @@ Response UserHandler::RequestProcesssing(const Request &req) {
 }
 
 Response UserHandler::userReg(const Request &req) {
-    if(req.body.empty())
-    {
+    if (req.body.empty()) {
         return Response(400, "Bad request");
     }
     try {
@@ -32,13 +31,14 @@ Response UserHandler::userReg(const Request &req) {
         std::string hash = crypto_module.hashPassword(json["password"]);
 
         dbManager.execute("INSERT INTO user (login, hash) VALUES (?, ?)", login, hash);
-    } catch (std::exception& e) {
+    } catch (std::exception &e) {
         std::cout << e.what() << "\n";
         return Response(400, "Bad request");
     }
 
     return Response();
 }
+
 
 Response UserHandler::userLogin(const Request &req) {
 
@@ -94,7 +94,7 @@ Response UserHandler::userLogin(const Request &req) {
 Response UserHandler::sendCommand(const Request &req) {
 
     try {
-        if(req.body.empty())
+        if (req.body.empty())
             throw std::invalid_argument("Body is empty");
 
         auto json = nlohmann::json::parse(req.body);
@@ -105,17 +105,127 @@ Response UserHandler::sendCommand(const Request &req) {
 
         auto it = commands.find(id_command);
 
-        if(it == commands.end())
+        if (it == commands.end())
             throw std::invalid_argument("Command not found");
 
         dbManager.execute("INSERT INTO commands (iot_id, command) VALUES (?, ?)", iot_id, it->second);
 
     } catch (std::exception& e)
     {
-        return Response(400, e.what());
+        return Response(400, e.what()); // вот коды + что случилось
     }
 
     return Response();
+}
+
+Response UserHandler::userGetInfo(const Request &req) {
+
+    Response res;
+
+    try {
+
+        if (req.body.empty())
+            throw std::invalid_argument("Body is empty");
+
+        auto json = nlohmann::json::parse(req.body);
+        std::string token = json["token"];
+        int iot_id = json["iot_id"];
+        int type = json["type"];
+        int user_id = userAuth(token);
+
+        auto iot_user = dbManager.query<int>("SELECT 1 FROM iot_user WHERE iot_id = ? AND user_id = ?", iot_id, user_id);
+        nlohmann::json res_body;
+        res_body["data"] = nlohmann::json::array();
+
+        if (iot_user.size() != 1) {
+            throw std::invalid_argument("iot not found");
+        }
+
+        if (type == 0) {
+            std::string sql = "SELECT temp, lamp1, lamp2, timestamp FROM data_iot WHERE iot_id = ? ORDER BY timestamp LIMIT 1";
+            auto iot_data = dbManager.query<data>(sql, iot_id);
+            if (iot_data.size() != 1) {
+                throw std::runtime_error("Ошибка чтения данных");
+            }
+
+            res_body["data"] = {{"temp:", iot_data[0].temp}
+                                ,{"lamp1:", iot_data[0].lamp1}
+                                ,{"lamp2:", iot_data[0].lamp2}
+                                ,{"timestamp:", iot_data[0].timestamp}};
+
+            res.body = res_body.dump();
+        }
+        else if (type == 1) {
+            std::string start = json["start"];
+            std::string  end = json["end"];  //TODO проверку что start < end
+            std::string sql = "SELECT temp, lamp1, lamp2, timestamp FROM data_iot WHERE iot_id = ? AND timestamp BETWEEN ? AND ?";
+            auto iot_data = dbManager.query<data>(sql, user_id, start, end);
+
+            if (iot_data.empty())
+                throw std::runtime_error("No data");
+
+            for (const auto& it : iot_data) {
+                res_body["data"].push_back({{"temp:", it.temp}
+                                                ,{"lamp1:", it.lamp1}
+                                                ,{"lamp2:", it.lamp2}
+                                                ,{"timestamp", it.timestamp}});
+            }
+
+            res.body = res_body.dump();
+        }
+        else {
+            std::cout << "Type not found\n";
+            throw std::invalid_argument("Type not found");
+        }
+
+    } catch (std::exception& e)
+    {
+        std::cout << e.what();
+        res.statusCode = 400;
+        res.statusMessage = e.what();
+        return res;
+    }
+    return res;
+}
+
+Response UserHandler::addIot(const Request &req) {
+
+    Response res;
+
+    try {
+
+        if(req.body.empty())
+            throw std::invalid_argument("Body is empty");
+
+        auto json = nlohmann::json::parse(req.body);
+        std::string token = json["token"];
+
+        if (!crypto_module.isValidUuid(token))
+            throw std::invalid_argument("Token invalid");
+
+        userAuth(token);
+
+        std::string mac = json["mac"]; //TODO проверка формата mac
+
+        dbManager.execute("INSERT INTO iot (mac) VALUES(?)", mac);
+        auto iot_id = dbManager.query<int>("SELECT id FROM iot WHERE mac = ?", mac);
+
+        if(iot_id.empty())
+            throw std::runtime_error("Iot not found");
+
+        nlohmann::json body;
+        body["iot_id"] = iot_id[0];
+        res.body = body.dump();
+
+    } catch (std::exception& e)
+    {
+        res.statusCode = 400;
+        res.statusMessage = e.what();
+        std::cout << e.what() << "\n";
+        return res;
+    }
+
+    return res;
 }
 
 int UserHandler::userAuth(const std::string &uuid) {
@@ -136,5 +246,8 @@ int UserHandler::userAuth(const std::string &uuid) {
 
 
 
-//TODO нормальные коды ошибок (для БАБУ)
+//TODO нормальные коды HTTP (для БАБУ)
+//TODO ОБработка ошибок json
+//TODO Исключения
+
 

@@ -21,6 +21,8 @@ int main()
     IRequestHandler* handler = r.route(req.path);
     Response res = handler->RequestProcesssing(req);
     std::cout<<net.sendResponse(res)<<std::endl; */
+
+    s
     try {
         DBManager test;
         test.execute("INSERT INTO user (login, hash) VALUES (?, ?)", std::string("test"), std::string("12345"));
