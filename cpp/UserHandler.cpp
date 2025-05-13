@@ -14,6 +14,8 @@ Response UserHandler::RequestProcesssing(const Request &req) {
             return userGetInfo(req);
         else if(req.path == "/iot/sendCommand")
             return sendCommand(req);
+        else if(req.path == "/addIot")
+            return addIot(req);
         else
             return Response(405, "Method Not Allowed");
     }
@@ -38,7 +40,6 @@ Response UserHandler::userReg(const Request &req) {
 
     return Response();
 }
-
 
 Response UserHandler::userLogin(const Request &req) {
 
@@ -66,10 +67,12 @@ Response UserHandler::userLogin(const Request &req) {
         }
 
         std::string token = crypto_module.uuidGen();
+        dbManager.execute("DELETE FROM token WHERE user_id = ?", user_id[0]);
+        dbManager.execute("INSERT INTO token (user_id, token) VALUES(?, ?)", user_id[0], token);
         nlohmann::json res_json;
         res_json["token"] = token;
 
-        auto iot_ids = dbManager.query<int>("SELECT iot_id FROM iot_user WHERE id = ?", user_id[0]);
+        auto iot_ids = dbManager.query<int>("SELECT iot_id FROM iot_user WHERE user_id = ?", user_id[0]);
         if(iot_ids.empty()) {
             res_json["iot_ids"] = "Iots not found";
         }
