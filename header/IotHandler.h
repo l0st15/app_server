@@ -1,24 +1,27 @@
 //
-// Created by Даниил on 10.05.2025.
+// Created by Даниил on 13.05.2025.
 //
 
 #ifndef APP_SERVER_IOTHANDLER_H
 #define APP_SERVER_IOTHANDLER_H
 #include "IRequestHandler.h"
-#include "DBmanager.h"
-#include "UserHandler.h"
-class IotHandler : public IRequestHandler {
+#include "DBManager.h"
+#include "Units.h"
+#include "json.hpp"
+
+class IotHandler : public IRequestHandler
+{
+private:
+    DBManager dbManager;
 
 public:
-    Response RequestProcesssing(const Request& request) override;
+    Response RequestProcessing(const Request& req) override;
+
 private:
-    DBmanager dBmanager;
-    UserHandler userHandler;
-private:
-    Response controlPower(const Request& req);
-    Response controlLamp(const Request& req);
     Response polling(const Request& req);
-    bool verifyUser(const std::string& uuid);
+    nlohmann::json getCommands(const int& iot_id);
+    int iotAuth(const std::string& iot_mac);
+    void sendData(const int& iot_id, const double& temp, const bool& lamp1, const bool& lamp2);
 };
 
 #endif //APP_SERVER_IOTHANDLER_H

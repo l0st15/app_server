@@ -4,8 +4,7 @@
 #include "UserHandler.h"
 #include <iostream>
 
-
-Response UserHandler::RequestProcesssing(const Request &req) {
+Response UserHandler::RequestProcessing(const Request &req) {
     if(req.method == "POST") {
         if(req.path == "/reg")
             return userReg(req);
@@ -13,6 +12,10 @@ Response UserHandler::RequestProcesssing(const Request &req) {
             return userLogin(req);
         else if(req.path == "/get_info")
             return userGetInfo(req);
+        else if(req.path == "/iot/sendCommand")
+            return sendCommand(req);
+        else if(req.path == "/addIot")
+            return addIot(req);
         else
             return Response(405, "Method Not Allowed");
     }
@@ -21,160 +24,234 @@ Response UserHandler::RequestProcesssing(const Request &req) {
 }
 
 Response UserHandler::userReg(const Request &req) {
-    if(!db_module.openDB())
-        return Response(503, "Service Unavailable");
-    else {
-        try {
-
-            auto json = nlohmann::json::parse(req.body); // парсинг тела запроса
-            // получаем логи и пароль
-            std::string login = json["login"];
-            std::string password = json["password"];
-
-            if(login.empty() || password.empty())
-                return Response(403, "Forbidden");
-
-            std::string hash_password = crypto_module.hashPassword(password); // генерация хеша пароля
-
-            if(!db_module.openDB()) // открытие бд
-                return Response(503, "Error open DB");
-
-            std::string sql_query = "INSERT INTO user(login, hash_password) VALUES(?, ?)"; // тело запроса
-
-            db_module.execQuery(sql_query, login, hash_password);
-            if(db_module.getStmt() == nullptr)
-                return Response(500, "Something went wrong");
-
-            return Response(201, "User registered");
-
-        }
-        catch (const std::exception& e) {
-            std::cerr << e.what();
-            return Response(500, "Internal Server Error");
-        }
-        db_module.closeDB();
+    if (req.body.empty()) {
+        return Response(400, "Bad request");
     }
+    try {
+        auto json = nlohmann::json::parse(req.body);
+        std::string login = json["login"];
+        std::string hash = crypto_module.hashPassword(json["password"]);
+
+        dbManager.execute("INSERT INTO user (login, hash) VALUES (?, ?)", login, hash);
+    } catch (std::exception &e) {
+        std::cout << e.what() << "\n";
+        return Response(400, "Bad request");
+    }
+
+    return Response();
 }
 
 Response UserHandler::userLogin(const Request &req) {
 
-    auto json = nlohmann::json::parse(req.body);
-    std::string login = json["login"];
-    std::string password = json["password"];
+    Response res;
 
-    if(login.empty() || password.empty())
-        return Response(403, "Forbidden");
+    if(req.body.empty())
+    {
+        return Response(400, "Bad request");
+    }
+    try {
+        auto json = nlohmann::json::parse(req.body);
+        std::string login = json["login"];
+        std::string password = json["password"];
+        auto hash = dbManager.query<std::string>("SELECT hash FROM user WHERE login = ?", login);
+        auto user_id = dbManager.query<int>("SELECT id FROM user WHERE login = ?", login);
+        if(hash.empty() || user_id.empty()) {
+            std::cout << "User not found\n";
+            return Response(400, "Bad request");
+        }
 
-    std::string hash_password = getUserHashPassword(login);
-    if(crypto_module.verifyPassword(hash_password, password)) {
-        nlohmann::json user_uuid;
-        user_uuid["uuid"] = crypto_module.uuidGen();
-        Response res(200, "OK");
-        res.body = user_uuid.dump();
-        res.body_length = res.body.size();
-        return res;
-    } else
-        return Response(401, "ТИ Мошенник");
+        if(!crypto_module.verifyPassword(hash[0], password))
+        {
+            std::cout << "Auth faild\n";
+            return Response(400, "Bad request");
+        }
 
+        std::string token = crypto_module.uuidGen();
+        dbManager.execute("DELETE FROM token WHERE user_id = ?", user_id[0]);
+        dbManager.execute("INSERT INTO token (user_id, token) VALUES(?, ?)", user_id[0], token);
+        nlohmann::json res_json;
+        res_json["token"] = token;
+
+        auto iot_ids = dbManager.query<int>("SELECT iot_id FROM iot_user WHERE user_id = ?", user_id[0]);
+        if(iot_ids.empty()) {
+            res_json["iot_ids"] = "Iots not found";
+        }
+        else {
+            res_json["iot_ids"] = nlohmann::json::array();
+            for(const auto& id : iot_ids)
+            {
+                res_json["iot_ids"].push_back(id);
+            }
+        }
+
+        res.body = res_json.dump();
+
+    } catch (std::exception& e) {
+        std::cout << e.what() << "\n";
+        return Response(400, "Bad request");
+    }
+
+    return res;
+}
+
+Response UserHandler::sendCommand(const Request &req) {
+
+    try {
+        if (req.body.empty())
+            throw std::invalid_argument("Body is empty");
+
+        auto json = nlohmann::json::parse(req.body);
+        std::string token = json["token"];
+        userAuth(token);
+        int id_command = json["command"];
+        int iot_id = json["iot_id"];
+
+        auto it = commands.find(id_command);
+
+        if (it == commands.end())
+            throw std::invalid_argument("Command not found");
+
+        dbManager.execute("INSERT INTO commands (iot_id, command) VALUES (?, ?)", iot_id, it->second);
+
+    } catch (std::exception& e)
+    {
+        return Response(400, e.what()); // вот коды + что случилось
+    }
+
+    return Response();
 }
 
 Response UserHandler::userGetInfo(const Request &req) {
 
-    auto json = nlohmann::json::parse(req.body);
-    std::string uuid = json["uuid"];
-    int iot_id = stoi(std::string(json["iot_id"]));
-    int user_id = userAuth(uuid);
-    if(user_id < 0)
-        return Response(401, "Ти мошенник");
+    Response res;
 
-    int type = stoi(std::string(json["type"]));
+    try {
 
-    if(!db_module.openDB())
-        return Response(503, "Error open DB");
+        if (req.body.empty())
+            throw std::invalid_argument("Body is empty");
 
-    std::string sql_query;
-    sqlite3_stmt* stmt;
+        auto json = nlohmann::json::parse(req.body);
+        std::string token = json["token"];
+        int iot_id = json["iot_id"];
+        int type = json["type"];
+        int user_id = userAuth(token);
 
-    switch (type) {
-        case 0: {
-            sql_query = "SELECT temp, lamp1, lamp2, timestamp FROM data "
-                        "WHERE iot_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT;";
-            db_module.openDB();
-            db_module.execQuery(sql_query, iot_id, user_id);
-            data_iot data = db_module.getDataDB();
-            db_module.closeDB();
-            nlohmann::json json_data;
-            json_data["data"] = {{"temp", data.temp}, {"lamp1", data.lamp1}, {"lamp2", data.lamp2},
-                                 {"timestamp", data.timestamp}};
-            Response res;
-            res.body = json_data.dump();
+        auto iot_user = dbManager.query<int>("SELECT 1 FROM iot_user WHERE iot_id = ? AND user_id = ?", iot_id, user_id);
+        nlohmann::json res_body;
+        res_body["data"] = nlohmann::json::array();
 
-            return  res;
+        if (iot_user.size() != 1) {
+            throw std::invalid_argument("iot not found");
         }
-        case 2: {
+
+        if (type == 0) {
+            std::string sql = "SELECT temp, lamp1, lamp2, timestamp FROM data_iot WHERE iot_id = ? ORDER BY timestamp LIMIT 1";
+            auto iot_data = dbManager.query<data>(sql, iot_id);
+            if (iot_data.size() != 1) {
+                throw std::runtime_error("Ошибка чтения данных");
+            }
+
+            res_body["data"] = {{"temp:", iot_data[0].temp}
+                                ,{"lamp1:", iot_data[0].lamp1}
+                                ,{"lamp2:", iot_data[0].lamp2}
+                                ,{"timestamp:", iot_data[0].timestamp}};
+
+            res.body = res_body.dump();
+        }
+        else if (type == 1) {
             std::string start = json["start"];
-            std::string end = json["end"];
+            std::string  end = json["end"];  //TODO проверку что start < end
+            std::string sql = "SELECT temp, lamp1, lamp2, timestamp FROM data_iot WHERE iot_id = ? AND timestamp BETWEEN ? AND ?";
+            auto iot_data = dbManager.query<data>(sql, iot_id, start, end);
 
-            sql_query = "SELECT temp, lamp1, lamp2, timestamp FROM data "
-                        "WHERE iot_id = ? AND user_id = ? AND timestamp BETWEEN ? AND ?;";
-            db_module.openDB();
-            db_module.execQuery(sql_query, iot_id, user_id, start, end);
-            nlohmann::json j_data;
-            j_data["data"] = nlohmann::json::array();
-            while (sqlite3_step(db_module.getStmt()) == SQLITE_ROW) {
-                data_iot data = db_module.getDataDB();
-                j_data["data"].push_back({
-                                                 {"temp",      data.temp},
-                                                 {"lamp1",     data.lamp1},
-                                                 {"lamp2",     data.lamp2},
-                                                 {"timestamp", data.timestamp},
-                                         });
-            };
+            if (iot_data.empty())
+                throw std::runtime_error("No data");
 
-            Response res;
-            res.body = j_data.dump();
-            return res;
+            for (const auto& it : iot_data) {
+                res_body["data"].push_back({{"temp:", it.temp}
+                                                ,{"lamp1:", it.lamp1}
+                                                ,{"lamp2:", it.lamp2}
+                                                ,{"timestamp", it.timestamp}});
+            }
+
+            res.body = res_body.dump();
         }
-        default:
-            return Response(404, "Content not found");
+        else {
+            std::cout << "Type not found\n";
+            throw std::invalid_argument("Type not found");
+        }
+
+    } catch (std::exception& e)
+    {
+        std::cout << e.what();
+        res.statusCode = 400;
+        res.statusMessage = e.what();
+        return res;
     }
+    return res;
 }
 
-int UserHandler::userAuth(const std::string& uuid) {
+Response UserHandler::addIot(const Request &req) {
 
-    if(!db_module.openDB()) {
-        return -1;
+    Response res;
+
+    try {
+
+        if(req.body.empty())
+            throw std::invalid_argument("Body is empty");
+
+        auto json = nlohmann::json::parse(req.body);
+        std::string token = json["token"];
+
+        if (!crypto_module.isValidUuid(token))
+            throw std::invalid_argument("Token invalid");
+
+        userAuth(token);
+
+        std::string mac = json["mac"]; //TODO проверка формата mac
+
+        dbManager.execute("INSERT INTO iot (mac) VALUES(?)", mac);
+        auto iot_id = dbManager.query<int>("SELECT id FROM iot WHERE mac = ?", mac);
+
+        if(iot_id.empty())
+            throw std::runtime_error("Iot not found");
+
+        nlohmann::json body;
+        body["iot_id"] = iot_id[0];
+        res.body = body.dump();
+
+    } catch (std::exception& e)
+    {
+        res.statusCode = 400;
+        res.statusMessage = e.what();
+        std::cout << e.what() << "\n";
+        return res;
     }
 
-    std::string sql_query = "SELECT user_id FROM user_token WHERE token = ?;";
-    db_module.execQuery(sql_query, uuid);
-    if(db_module.getStmt() == nullptr)
-        return -1;
-
-    int id;
-    db_module.getDataDB(0, id);
-    db_module.closeDB();
-    return id;
+    return res;
 }
 
-std::string UserHandler::getUserHashPassword(const std::string& user_login) {
+int UserHandler::userAuth(const std::string &uuid) {
 
-    if(!db_module.openDB())
-        return "";
+    if(!crypto_module.isValidUuid(uuid))
+        throw std::invalid_argument("UUID is not valid");
 
-    std::string sql_query = "SELECT hash_password FROM user WHERE login = ?;";
-    db_module.execQuery(sql_query, user_login);
-    if(db_module.getStmt() == nullptr)
-        return "";
+    auto id = dbManager.query<int>("SELECT user_id FROM token WHERE token = ?", uuid);
 
-    std::string hash_password;
-    db_module.getDataDB(0, hash_password);
-    db_module.closeDB();
+    if(id.empty())
+        throw std::invalid_argument("User not found");
+    if(id.size() != 1)
+        throw std::invalid_argument("UUID not unique");
 
-    return hash_password;
+    return id[0];
 }
 
 
 
+
+//TODO нормальные коды HTTP (для БАБУ)
+//TODO ОБработка ошибок json
+//TODO Исключения
+//TODO время жизни токена
 
 

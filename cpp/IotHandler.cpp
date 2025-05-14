@@ -1,73 +1,94 @@
 //
-// Created by Даниил on 10.05.2025.
+// Created by Даниил on 13.05.2025.
 //
-
 #include "IotHandler.h"
-#include "iostream"
+#include <iostream>
 
-Response IotHandler::RequestProcesssing(const Request &req) {
-    if (req.path == "/iot/power")
-        return controlPower(req);
-    else if (req.path == "/iot/lamp")
-        return controlLamp(req);
-    else if (req.path == "/iot/sendTemp")
-        return polling(req);
+Response IotHandler::RequestProcessing(const Request &req) {
+    if (req.method == "POST")
+    {
+        if (req.path == "/iot/sendTemp")
+            return polling(req);
+        else
+            return Response(405, "Method Not Allowed");
+    }
     else
         return Response(405, "Method Not Allowed");
 }
 
-Response IotHandler::controlLamp(const Request &req) {
-
-    auto json = nlohmann::json::parse(req.body);
-    std::string uuid = json["token"];
-    if(!verifyUser(uuid))
-        return Response(405, "Method Not Allowed");
-
-    std::string command = json["command"];
-    // TODO проверка на валидность команды
-    int iot_id = std::stoi(std::string(json["iot_id"]));
-    std::string sql_query = "INSERT INTO iot_commands(iot_id, command) VALUES(?, ?);";
-    dBmanager.openDB();
-    dBmanager.execQuery(sql_query, iot_id, command);
-    dBmanager.closeDB();
-    return Response();
-
-}
-
 Response IotHandler::polling(const Request &req) {
-    auto json = nlohmann::json::parse(req.body);
-    double temp = std::stod(to_string(json["temp"]));
-    std::string sql_query = "INSERT INTO ";
 
-    return Response(405, "Method Not Allowed");
+    Response res;
+
+    try {
+
+        if(req.body.empty())
+            throw std::invalid_argument("Body is empty");
+
+        auto json = nlohmann::json::parse(req.body);
+        std::string mac = json["mac"];
+        int id = iotAuth(mac);
+
+        data in_data;
+        in_data.temp = json["temp"];
+        in_data.lamp1 = json["lamp1"];
+        in_data.lamp2 = json["lamp2"];
+
+        sendData(id, in_data.temp, in_data.lamp1, in_data.lamp2);
+
+        res.body = getCommands(id).dump();
+
+
+    } catch (std::exception& e)
+    {
+        res.statusCode = 400;
+        res.statusMessage = e.what();
+        std::cerr << e.what() << std::endl;
+        return res;
+    }
+
+    return res;
 }
 
-Response IotHandler::controlPower(const Request &req) {
+nlohmann::json IotHandler::getCommands(const int &iot_id) {
 
-    auto json = nlohmann::json::parse(req.body);
-    std::string uuid = json["token"];
-    if(!verifyUser(uuid))
-        return Response(405, "Method Not Allowed");
+    nlohmann::json json;
+    json["commands"] = nlohmann::json::array();
 
-    std::string command = json["command"];
-    // TODO проверка на валидность команды
-    int iot_id = std::stoi(std::string(json["iot_id"]));
-    std::string sql_query = "INSERT INTO iot_commands(iot_id, command) VALUES(?, ?);";
-    dBmanager.openDB();
-    dBmanager.execQuery(sql_query, iot_id, command);
-    dBmanager.closeDB();
-    return Response();
+    std::string sql_select = "SELECT id, command FROM commands WHERE iot_id = ? AND status = 'not completed'";
+    std::string sql_update = "UPDATE commands SET status = 'completed' WHERE id = ?";
+
+    try {
+        dbManager.execute("BEGIN TRANSACTION");
+
+        auto cmds = dbManager.query<Command>(sql_select, iot_id);
+
+        for (const auto& it : cmds) {
+            json["commands"].push_back(it.cmd);
+            dbManager.execute(sql_update, it.id);
+        }
+        dbManager.execute("COMMIT");
+    } catch (const std::exception& e) {
+        dbManager.execute("ROLLBACK");
+        std::cerr << "Ошибка: " << e.what() << std::endl;
+        throw std::runtime_error("DB error");
+    }
+    return json;
 }
 
-bool IotHandler::verifyUser(const std::string& uuid) {
+int IotHandler::iotAuth(const std::string &iot_mac) {
 
-    std::string sql_query = "SELECT user_id FROM user_ token WHERE token = ?;";
-    int user_id = 0;
-    dBmanager.openDB();
-    dBmanager.execQuery(sql_query, uuid);
-    dBmanager.getDataDB(1, user_id);
-    dBmanager.closeDB();
-    if(user_id == 0)
-        return false;
-    return true;
+    std::string sql = "SELECT id FROM iot WHERE mac = ?";
+    auto iot_id = dbManager.query<int>(sql, iot_mac);
+    if(iot_id.empty())
+        throw std::invalid_argument("id not found");
+
+    return iot_id[0];
+}
+
+void IotHandler::sendData(const int& iot_id, const double &temp, const bool &lamp1, const bool &lamp2) {
+
+    std::string sql = "INSERT INTO data_iot (iot_id, temp, lamp1, lamp2) VALUES(?, ?, ?, ?)";
+    dbManager.execute(sql, iot_id, temp, lamp1, lamp2);
+
 }

@@ -10,12 +10,23 @@
 #include <string>
 #include <map>
 
-struct data_iot {
+struct data {
     double temp;
     int lamp1;
     int lamp2;
     std::string timestamp;
 };
+
+struct Command {
+    int id;
+    std::string cmd;
+};
+
+inline std::map<int, std::string> commands { {1, "power_off"}
+                            ,{2, "lamp1_on"}
+                            ,{3, "lamp1_off"}
+                            ,{4, "lamp2_on"}
+                            ,{5, "lamp2_off"}};
 
 struct Request
 {

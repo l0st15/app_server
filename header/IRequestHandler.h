@@ -10,7 +10,7 @@ class IRequestHandler // интерфейс для всех обработчик
 {
 public:
    virtual ~IRequestHandler() = default;
-   virtual Response RequestProcesssing(const Request& request) = 0;
+   virtual Response RequestProcessing(const Request& request) = 0;
 };
 
 #endif //APP_SERVER_IREQUESTHANDLER_H
