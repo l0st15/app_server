@@ -15,7 +15,7 @@
 class UserHandler : public IRequestHandler
 {
 public:
-    Response RequestProcesssing(const Request& req) override;
+    Response RequestProcessing(const Request& req) override;
 private:
     Crypto crypto_module;
     DBManager dbManager;

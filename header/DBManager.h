@@ -140,6 +140,6 @@ inline Command DBManager::extractRow<Command>() {
             sqlite3_column_int(stmt, 0),
             std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)))
     };
-}
+} // спецификация шаблона под тип данных Command
 
 #endif //APP_SERVER_DBMANAGER_H

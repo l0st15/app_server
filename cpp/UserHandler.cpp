@@ -4,7 +4,7 @@
 #include "UserHandler.h"
 #include <iostream>
 
-Response UserHandler::RequestProcesssing(const Request &req) {
+Response UserHandler::RequestProcessing(const Request &req) {
     if(req.method == "POST") {
         if(req.path == "/reg")
             return userReg(req);

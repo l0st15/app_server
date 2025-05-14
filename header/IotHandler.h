@@ -15,7 +15,7 @@ private:
     DBManager dbManager;
 
 public:
-    Response RequestProcesssing(const Request& req) override;
+    Response RequestProcessing(const Request& req) override;
 
 private:
     Response polling(const Request& req);

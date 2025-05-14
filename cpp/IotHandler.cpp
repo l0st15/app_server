@@ -4,7 +4,7 @@
 #include "IotHandler.h"
 #include <iostream>
 
-Response IotHandler::RequestProcesssing(const Request &req) {
+Response IotHandler::RequestProcessing(const Request &req) {
     if (req.method == "POST")
     {
         if (req.path == "/iot/sendTemp")
@@ -88,7 +88,7 @@ int IotHandler::iotAuth(const std::string &iot_mac) {
 
 void IotHandler::sendData(const int& iot_id, const double &temp, const bool &lamp1, const bool &lamp2) {
 
-    std::string sql = "INSERT INTO iot_data (iot_id, temp, lamp1, lamp2) VALUES(?, ?, ?, ?)";
+    std::string sql = "INSERT INTO data_iot (iot_id, temp, lamp1, lamp2) VALUES(?, ?, ?, ?)";
     dbManager.execute(sql, iot_id, temp, lamp1, lamp2);
 
 }
