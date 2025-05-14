@@ -32,7 +32,7 @@ int main()
     IRequestHandler* handler = r.route(req.path);
     Response res = handler->RequestProcessing(req);
     std::cout << res.body << std::endl;
-
+    std::cout<<net.sendResponse(res)<<std::endl;
     //TODO проверить работоспосбность
     return 0;
 }
