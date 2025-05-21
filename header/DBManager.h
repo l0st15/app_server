@@ -54,7 +54,7 @@ public:
     } // выполнение запросов с возращаемымм значением
 
     DBManager() {
-        open("D:/study/project/app_server/database/data.sqlite");
+        open("data.sqlite");
     } // конструктор по умолчанию
 
     ~DBManager() {
