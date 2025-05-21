@@ -83,19 +83,25 @@ int Network::recieveRequest(Request &req) {
         return -7;
     if (false)
         return -8; //Зарезервировано под query params
-    req.body_length = std::stoi(cl_match[1]);
-    req.method = start_line_match[1];
-    req.path = start_line_match[2];
-    req.http_version = start_line_match[4];
-    //body
-    size_t headers_end = request.find("\r\n\r\n");
-    size_t body_start = headers_end + 4;
-    if (body_start <= request.size()) {
-        std::string body = request.substr(body_start,req.body_length);
-        body.erase(std::remove(body.begin(), body.end(), '\\'),body.end());
-        body = body.substr(1,body.length()-2);
-        req.body = body;
-    }
+        try {
+            req.body_length = std::stoi(cl_match[1]);
+            req.method = start_line_match[1];
+            req.path = start_line_match[2];
+            req.http_version = start_line_match[4];
+            //body
+            size_t headers_end = request.find("\r\n\r\n");
+            size_t body_start = headers_end + 4;
+            if (body_start <= request.size()) {
+                std::string body = request.substr(body_start, req.body_length);
+                body.erase(std::remove(body.begin(), body.end(), '\\'), body.end());
+                if (body[0]  != '{')
+                    body = body.substr(1, body.length() - 2);
+                req.body = body;
+            }
+        } catch (std::exception &e) {
+            std::cout << e.what() << "\n";
+            return -9;
+        }
     //TEMPORARY
     //closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
     return 1;

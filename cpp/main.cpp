@@ -31,9 +31,18 @@ int main()
         r.registerRoute("/addIot", std::make_unique<UserHandler>());
         r.registerRoute("/iot/sendTemp", std::make_unique<IotHandler>());
         IRequestHandler *handler = r.route(req.path);
-        Response res = handler->RequestProcessing(req);
-        std::cout << res.body << std::endl;
-        std::cout << net.sendResponse(res) << std::endl;
+        if (handler==nullptr)
+        {
+            Response res(405,"Method not allowed");
+            std::cout<<"Incorrect method";
+            std::cout << res.body << std::endl;
+            std::cout << net.sendResponse(res) << std::endl;
+        }
+        else {
+            Response res = handler->RequestProcessing(req);
+            std::cout << res.body << std::endl;
+            std::cout << net.sendResponse(res) << std::endl;
+        }
         //TODO проверить работоспосбность
     }
     return 0;
