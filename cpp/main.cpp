@@ -7,9 +7,9 @@
 int main()
 {
 
-    Request req;
     Network net("127.0.0.1",47891);
     while(true) {
+        Request req;
         std::cout << net.recieveRequest(req) << std::endl;
         std::cout << req.body << std::endl;
         /*router r;
@@ -44,6 +44,7 @@ int main()
             std::cout << net.sendResponse(res) << std::endl;
         }
         //TODO проверить работоспосбность
+        //TODO Перенести req в цикл while
     }
     return 0;
 }
