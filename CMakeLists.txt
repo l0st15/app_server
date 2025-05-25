@@ -25,6 +25,7 @@ add_executable(app_server cpp/main.cpp
         header/DBManager.h
         header/IotHandler.h
         cpp/IotHandler.cpp
+        header/DefaultHandler.h
 )
 
 target_link_libraries(app_server PRIVATE ws2_32)

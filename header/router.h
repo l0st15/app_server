@@ -8,6 +8,7 @@
 #include <string>
 #include <memory>
 #include "IRequestHandler.h"
+#include "DefaultHandler.h"
 class router
 {
 private:
@@ -24,7 +25,7 @@ public:
     IRequestHandler* route(const std::string& path) // поиск маршрута и возращение указателя на нужный обработчик
     {
         auto it = routes.find(path);
-        return (it != routes.end()) ? it->second.get() : nullptr; // если it не конец то возращем обработчик иначе nullptr
+        return (it != routes.end()) ? it->second.get() : std::make_unique<DefaultHandler>; // если it не конец то возращем обработчик иначе nullptr
     }
 };
 
