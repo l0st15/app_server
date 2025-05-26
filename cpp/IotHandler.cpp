@@ -26,8 +26,8 @@ Response IotHandler::polling(const Request &req) {
             throw std::invalid_argument("Body is empty");
 
         auto json = nlohmann::json::parse(req.body);
-        std::string mac = json["mac"];
-        int id = iotAuth(mac);
+        std::string iot_token = json["iot_token"];
+        int id = iotAuth(iot_token);
 
         data in_data;
         in_data.temp = json["temp"];
@@ -78,7 +78,7 @@ nlohmann::json IotHandler::getCommands(const int &iot_id) {
 
 int IotHandler::iotAuth(const std::string &iot_mac) {
 
-    std::string sql = "SELECT id FROM iot WHERE mac = ?";
+    std::string sql = "SELECT id FROM iot WHERE iot_token = ?";
     auto iot_id = dbManager.query<int>(sql, iot_mac);
     if(iot_id.empty())
         throw std::invalid_argument("id not found");
