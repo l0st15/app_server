@@ -114,7 +114,7 @@ int Network::sendResponse(Response &res)
     http_response += "" + res.statusMessage + "\r\n";
     http_response += "Content-Type: application/json\r\n";
     http_response += "headerForSasha: U+1F4A9\r\n";
-    http_response += "Content-Length: " + std::to_string(res.body_length)+ "\r\n";
+    http_response += "Content-Length: " + std::to_string(res.body.size())+ "\r\n";
     http_response += "Connection: close\r\n\r\n";
     http_response += res.body;
 

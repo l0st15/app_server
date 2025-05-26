@@ -7,7 +7,7 @@
 
 int main()
 {
-    /*Network net("127.0.0.1",47891);
+    Network net("127.0.0.1",47891);
     router r;
     r.registerRoute("/reg", std::make_unique<UserHandler>());
     r.registerRoute("/login", std::make_unique<UserHandler>());
@@ -23,11 +23,7 @@ int main()
         Response res = handler->RequestProcessing(req);
         std::cout << res.body << std::endl;
         std::cout << net.sendResponse(res) << std::endl;
-    }*/
-
-    Logger logger("test.log");
-
-    logger.log("БОБИ", "Боби жив");
+    }
 
     return 0;
 }

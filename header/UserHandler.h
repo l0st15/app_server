@@ -11,6 +11,7 @@
 #include "json.hpp"
 #include "Crypto.h"
 #include "DBManager.h"
+#include "Logger.h"
 
 class UserHandler : public IRequestHandler
 {
@@ -19,6 +20,8 @@ public:
 private:
     Crypto crypto_module;
     DBManager dbManager;
+    Logger logger;
+private:
     Response userReg(const Request& req); // регистрация пользователя
     Response userLogin(const Request& req); // вход в аккаунт
     Response userGetInfo(const Request& req); //получени данных из бд

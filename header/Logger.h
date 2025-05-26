@@ -14,16 +14,18 @@
 class Logger {
 public:
     Logger(const std::string& filename) : log_file(filename, std::ios::app) {}
+    Logger() : log_file("server.log", std::ios::app) {}
 
-    void log(const std::string& level, const std::string& mes) {
+    void log(const std::string& level, const std::string& process, const std::string& mes) {
 
         /*std::string thread_id_str = std::to_string(
                 std::hash<std::thread::id>{}(std::this_thread::get_id())
         );*/
 
-        std::string log_entry = "timestamp: " + currentTime() + " level: " + level + " message: " + mes;
-
-        log_file << log_entry << "\n";
+        log_file << "timestamp: " << currentTime();
+        log_file << " level: " << level;
+        log_file << " process: " << process;
+        log_file << " message: " << mes << "\n";
     }
 
     ~Logger() {

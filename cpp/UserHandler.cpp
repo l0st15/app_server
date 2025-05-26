@@ -27,17 +27,18 @@ Response UserHandler::userReg(const Request &req) {
     if (req.body.empty()) {
         return Response(400, "Bad request");
     }
+    std::string login;
     try {
         auto json = nlohmann::json::parse(req.body);
-        std::string login = json["login"];
+        login = json["login"];
         std::string hash = crypto_module.hashPassword(json["password"]);
 
         dbManager.execute("INSERT INTO user (login, hash) VALUES (?, ?)", login, hash);
     } catch (std::exception &e) {
-        std::cout << e.what() << "\n";
+        logger.log("ERROR", "USER", e.what());
         return Response(400, "Bad request");
     }
-
+    logger.log("INFO", "USER", "User " + login + "reg");
     return Response();
 }
 
@@ -49,20 +50,21 @@ Response UserHandler::userLogin(const Request &req) {
     {
         return Response(400, "Bad request");
     }
+    std::string login;
     try {
         auto json = nlohmann::json::parse(req.body);
-        std::string login = json["login"];
+        login = json["login"];
         std::string password = json["password"];
         auto hash = dbManager.query<std::string>("SELECT hash FROM user WHERE login = ?", login);
         auto user_id = dbManager.query<int>("SELECT id FROM user WHERE login = ?", login);
         if(hash.empty() || user_id.empty()) {
-            std::cout << "User not found\n";
+            logger.log("INFO", "USER", "User " + login + " not found");
             return Response(400, "Bad request");
         }
 
         if(!crypto_module.verifyPassword(hash[0], password))
         {
-            std::cout << "Auth faild\n";
+            logger.log("WARNING", "USER", "User " + login + " auth failed");
             return Response(400, "Bad request");
         }
 
@@ -87,24 +89,28 @@ Response UserHandler::userLogin(const Request &req) {
         res.body = res_json.dump();
 
     } catch (std::exception& e) {
-        std::cout << e.what() << "\n";
+        logger.log("ERROR", "USER", "User " + login + " " + e.what());
         return Response(400, "Bad request");
     }
 
+    logger.log("INFO", "USER", "User " + login + "log in");
     return res;
 }
 
 Response UserHandler::sendCommand(const Request &req) {
 
+    int user_id;
+    int id_command;
+    int iot_id;
     try {
         if (req.body.empty())
             throw std::invalid_argument("Body is empty");
 
         auto json = nlohmann::json::parse(req.body);
         std::string token = json["token"];
-        userAuth(token);
-        int id_command = json["command"];
-        int iot_id = json["iot_id"];
+        user_id = userAuth(token);
+        id_command = json["command"];
+        iot_id = json["iot_id"];
 
         auto it = commands.find(id_command);
 
@@ -115,16 +121,18 @@ Response UserHandler::sendCommand(const Request &req) {
 
     } catch (std::exception& e)
     {
+        logger.log("ERROR", "USER", "User id" + std::to_string(user_id) + " " + e.what());
         return Response(400, e.what()); // вот коды + что случилось
     }
-
+    logger.log("INFO", "USER", "User id " + std::to_string(user_id) + " send to iot_id "
+                                + std::to_string(iot_id) + "command id" + std::to_string(id_command)); //формат записи сообщенея гениален
     return Response();
 }
 
 Response UserHandler::userGetInfo(const Request &req) {
 
     Response res;
-
+    int user_id;
     try {
 
         if (req.body.empty())
@@ -134,7 +142,7 @@ Response UserHandler::userGetInfo(const Request &req) {
         std::string token = json["token"];
         int iot_id = json["iot_id"];
         int type = json["type"];
-        int user_id = userAuth(token);
+        user_id = userAuth(token);
 
         auto iot_user = dbManager.query<int>("SELECT 1 FROM iot_user WHERE iot_id = ? AND user_id = ?", iot_id, user_id);
         nlohmann::json res_body;
@@ -246,6 +254,7 @@ int UserHandler::userAuth(const std::string &uuid) {
 
     return id[0];
 }
+
 
 
 
