@@ -15,24 +15,22 @@ class Logger {
 public:
     Logger(const std::string& filename) : log_file(filename, std::ios::app) {}
 
-    void log(const std::string& type, const std::string& mes) {
-        nlohmann::json log_entry;
-        std::string thread_id_str = std::to_string(
-                std::hash<std::thread::id>{}(std::this_thread::get_id())
-        );
-        log_entry.push_back({"timestamp", currentTime()});
-        log_entry.push_back({"type", type});
-        log_entry.push_back({"message", mes});
-        log_entry.push_back({"thread_id", thread_id_str});
+    void log(const std::string& level, const std::string& mes) {
 
-        log_file << log_entry.dump(4) << "\n";
+        /*std::string thread_id_str = std::to_string(
+                std::hash<std::thread::id>{}(std::this_thread::get_id())
+        );*/
+
+        std::string log_entry = "timestamp: " + currentTime() + " level: " + level + " message: " + mes;
+
+        log_file << log_entry << "\n";
     }
 
     ~Logger() {
         log_file.close();
     }
 private:
-    std::string currentTime() {
+    std::string static currentTime() {
         auto now = std::chrono::system_clock::now();
         auto in_time_t = std::chrono::system_clock::to_time_t(now);
 
