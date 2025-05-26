@@ -208,9 +208,10 @@ Response UserHandler::addIot(const Request &req) {
 
         userAuth(token);
 
-        std::string mac = json["mac"]; //TODO проверка формата mac
+        std::string mac = json["mac"]; //TODO проверка формата mac у нас пользователь отправляет серкте для iot??
+        std::string iot_token = json["iot_token"];
 
-        dbManager.execute("INSERT INTO iot (mac) VALUES(?)", mac);
+        dbManager.execute("INSERT INTO iot (mac, iot_token) VALUES(?, ?)", mac, iot_token);
         auto iot_id = dbManager.query<int>("SELECT id FROM iot WHERE mac = ?", mac);
 
         if(iot_id.empty())
