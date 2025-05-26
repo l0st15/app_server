@@ -24,8 +24,9 @@ public:
     }
     IRequestHandler* route(const std::string& path) // поиск маршрута и возращение указателя на нужный обработчик
     {
+        static DefaultHandler defaultHandler;
         auto it = routes.find(path);
-        return (it != routes.end()) ? it->second.get() : std::make_unique<DefaultHandler>; // если it не конец то возращем обработчик иначе nullptr
+        return (it != routes.end()) ? it->second.get() : &defaultHandler; // если it не конец то возращем обработчик иначе обработчик по умолчанию
     }
 };
 

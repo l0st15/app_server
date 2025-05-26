@@ -8,7 +8,7 @@
 
 class DefaultHandler : public IRequestHandler {
 
-    Response RequestProcessing(const Request& request)
+    Response RequestProcessing(const Request& request) override
     {
         return Response(405,"Method not allowed");
     }
