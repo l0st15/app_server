@@ -14,7 +14,7 @@
 class Logger {
 public:
     Logger(const std::string& filename) : log_file(filename, std::ios::app) {}
-    Logger() : log_file("server.log", std::ios::app) {}
+    Logger() {}
 
     void log(const std::string& level, const std::string& process, const std::string& mes) {
 
@@ -29,6 +29,12 @@ public:
     }
 
     ~Logger() {
+        log_file.close();
+    }
+    void open(const std::string& filename) {
+        log_file.open(filename, std::ios::app);
+    }
+    void close() {
         log_file.close();
     }
 private:

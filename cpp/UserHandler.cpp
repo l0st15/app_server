@@ -27,6 +27,7 @@ Response UserHandler::userReg(const Request &req) {
     if (req.body.empty()) {
         return Response(400, "Bad request");
     }
+    logger.open("server.log");
     std::string login;
     try {
         auto json = nlohmann::json::parse(req.body);
@@ -36,16 +37,18 @@ Response UserHandler::userReg(const Request &req) {
         dbManager.execute("INSERT INTO user (login, hash) VALUES (?, ?)", login, hash);
     } catch (std::exception &e) {
         logger.log("ERROR", "USER", e.what());
+        logger.close();
         return Response(400, "Bad request");
     }
     logger.log("INFO", "USER", "User " + login + "reg");
+    logger.close();
     return Response();
 }
 
 Response UserHandler::userLogin(const Request &req) {
 
     Response res;
-
+    logger.open("server.log");
     if(req.body.empty())
     {
         return Response(400, "Bad request");
@@ -59,12 +62,14 @@ Response UserHandler::userLogin(const Request &req) {
         auto user_id = dbManager.query<int>("SELECT id FROM user WHERE login = ?", login);
         if(hash.empty() || user_id.empty()) {
             logger.log("INFO", "USER", "User " + login + " not found");
+            logger.close();
             return Response(400, "Bad request");
         }
 
         if(!crypto_module.verifyPassword(hash[0], password))
         {
             logger.log("WARNING", "USER", "User " + login + " auth failed");
+            logger.close();
             return Response(400, "Bad request");
         }
 
@@ -90,15 +95,17 @@ Response UserHandler::userLogin(const Request &req) {
 
     } catch (std::exception& e) {
         logger.log("ERROR", "USER", "User " + login + " " + e.what());
+        logger.close();
         return Response(400, "Bad request");
     }
 
-    logger.log("INFO", "USER", "User " + login + "log in");
+    logger.log("INFO", "USER", "User " + login + " log in");
+    logger.close();
     return res;
 }
 
 Response UserHandler::sendCommand(const Request &req) {
-
+    logger.open("server.log");
     int user_id;
     int id_command;
     int iot_id;
@@ -125,14 +132,16 @@ Response UserHandler::sendCommand(const Request &req) {
         return Response(400, e.what()); // вот коды + что случилось
     }
     logger.log("INFO", "USER", "User id " + std::to_string(user_id) + " send to iot_id "
-                                + std::to_string(iot_id) + "command id" + std::to_string(id_command)); //формат записи сообщенея гениален
+                                + std::to_string(iot_id) + "command id" + std::to_string(id_command));
+    logger.close;
     return Response();
 }
 
 Response UserHandler::userGetInfo(const Request &req) {
-
+    logger.open("server.log");
     Response res;
     int user_id;
+    int iot_id;
     try {
 
         if (req.body.empty())
@@ -140,7 +149,7 @@ Response UserHandler::userGetInfo(const Request &req) {
 
         auto json = nlohmann::json::parse(req.body);
         std::string token = json["token"];
-        int iot_id = json["iot_id"];
+        iot_id = json["iot_id"];
         int type = json["type"];
         user_id = userAuth(token);
 
@@ -191,18 +200,24 @@ Response UserHandler::userGetInfo(const Request &req) {
 
     } catch (std::exception& e)
     {
-        std::cout << e.what();
+        logger.log("ERROR", "USER", "User id" + std::to_string(user_id) + " " + e.what());
+        logger.close();
         res.statusCode = 400;
         res.statusMessage = e.what();
         return res;
     }
+    logger.log("INFO", "USER", "User id " + std::to_string(user_id) + "get info from iot id"
+                + std::to_string(iot_id));
+    logger.close();
     return res;
 }
 
 Response UserHandler::addIot(const Request &req) {
 
     Response res;
-
+    int user_id;
+    std::vector<int> iot_id;
+    logger.open("server.log");
     try {
 
         if(req.body.empty())
@@ -214,17 +229,18 @@ Response UserHandler::addIot(const Request &req) {
         if (!crypto_module.isValidUuid(token))
             throw std::invalid_argument("Token invalid");
 
-        userAuth(token);
+        user_id = userAuth(token);
 
         std::string mac = json["mac"]; //TODO проверка формата mac у нас пользователь отправляет серкте для iot??
         std::string iot_token = json["iot_token"];
 
         dbManager.execute("INSERT INTO iot (mac, iot_token) VALUES(?, ?)", mac, iot_token);
-        auto iot_id = dbManager.query<int>("SELECT id FROM iot WHERE mac = ?", mac);
+
+        iot_id = dbManager.query<int>("SELECT id FROM iot WHERE mac = ?", mac);
 
         if(iot_id.empty())
             throw std::runtime_error("Iot not found");
-
+        dbManager.execute("INSERT INTO iot_user (iot_id, user_id) VALUES(?, ?)", iot_id[0], user_id);
         nlohmann::json body;
         body["iot_id"] = iot_id[0];
         res.body = body.dump();
@@ -233,10 +249,12 @@ Response UserHandler::addIot(const Request &req) {
     {
         res.statusCode = 400;
         res.statusMessage = e.what();
-        std::cout << e.what() << "\n";
+        logger.log("ERROR", "USER", "User id" + std::to_string(user_id) + " " + e.what());
+        logger.close();
         return res;
     }
-
+    logger.log("INFO", "USER", "User " + std::to_string(user_id) + " add iot with id " + std::to_string(iot_id[0]));
+    logger.close();
     return res;
 }
 
