@@ -118,11 +118,17 @@ Response UserHandler::sendCommand(const Request &req) {
         user_id = userAuth(token);
         id_command = json["command"];
         iot_id = json["iot_id"];
+        auto iot_user = dbManager.query<int>("SELECT 1 FROM iot_user WHERE iot_id = ? AND user_id = ?", iot_id, user_id);
+        if (iot_user.size() != 1) {
+            throw std::invalid_argument("iot not found");
+        }
 
         auto it = commands.find(id_command);
 
         if (it == commands.end())
             throw std::invalid_argument("Command not found");
+
+
 
         dbManager.execute("INSERT INTO commands (iot_id, command) VALUES (?, ?)", iot_id, it->second);
 
