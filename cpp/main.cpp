@@ -7,6 +7,8 @@
 
 int main()
 {
+    Logger logger;
+    logger.log("INFO", "NET", "Server start");
     Network net("127.0.0.1",47891);
     router r;
     r.registerRoute("/reg", std::make_unique<UserHandler>());
@@ -15,6 +17,7 @@ int main()
     r.registerRoute("/iot/sendCommand", std::make_unique<UserHandler>());
     r.registerRoute("/addIot", std::make_unique<UserHandler>());
     r.registerRoute("/iot/sendTemp", std::make_unique<IotHandler>());
+
     while(true) {
         Request req;
         std::cout << net.recieveRequest(req) << std::endl;
@@ -24,6 +27,7 @@ int main()
         std::cout << res.body << std::endl;
         std::cout << net.sendResponse(res) << std::endl;
     }
+
 
     return 0;
 }
