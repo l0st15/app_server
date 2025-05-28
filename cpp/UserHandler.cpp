@@ -25,7 +25,7 @@ Response UserHandler::RequestProcessing(const Request &req) {
 
 Response UserHandler::userReg(const Request &req) {
     if (req.body.empty()) {
-        return Response(400, "Bad request");
+        return Response(400, "Bad request: Empty body");
     }
     logger.open("server.log");
     std::string login;
@@ -38,11 +38,11 @@ Response UserHandler::userReg(const Request &req) {
     } catch (std::exception &e) {
         logger.log("ERROR", "USER", e.what());
         logger.close();
-        return Response(400, "Bad request");
+        return Response(400, "Bad request: Reg failed");
     }
     logger.log("INFO", "USER", "User " + login + "reg");
     logger.close();
-    return Response();
+    return Response(201, "Created");
 }
 
 Response UserHandler::userLogin(const Request &req) {
@@ -51,7 +51,7 @@ Response UserHandler::userLogin(const Request &req) {
     logger.open("server.log");
     if(req.body.empty())
     {
-        return Response(400, "Bad request");
+        return Response(400, "Bad Request: Empty body");
     }
     std::string login;
     try {
@@ -63,14 +63,14 @@ Response UserHandler::userLogin(const Request &req) {
         if(hash.empty() || user_id.empty()) {
             logger.log("INFO", "USER", "User " + login + " not found");
             logger.close();
-            return Response(400, "Bad request");
+            return Response(404, "User Not Found");
         }
 
         if(!crypto_module.verifyPassword(hash[0], password))
         {
             logger.log("WARNING", "USER", "User " + login + " auth failed");
             logger.close();
-            return Response(400, "Bad request");
+            return Response(401, "Unauthorized");
         }
 
         std::string token = crypto_module.uuidGen();
@@ -129,12 +129,12 @@ Response UserHandler::sendCommand(const Request &req) {
     } catch (std::exception& e)
     {
         logger.log("ERROR", "USER", "User id" + std::to_string(user_id) + " " + e.what());
-        return Response(400, e.what()); // вот коды + что случилось
+        return Response(400, e.what());
     }
     logger.log("INFO", "USER", "User id " + std::to_string(user_id) + " send to iot_id "
                                 + std::to_string(iot_id) + "command id" + std::to_string(id_command));
-    logger.close;
-    return Response();
+    logger.close();
+    return Response(202, "Accepted");
 }
 
 Response UserHandler::userGetInfo(const Request &req) {
@@ -279,7 +279,6 @@ int UserHandler::userAuth(const std::string &uuid) {
 
 //TODO нормальные коды HTTP (для БАБУ)
 //TODO ОБработка ошибок json
-//TODO Исключения
 //TODO время жизни токена
 
 
