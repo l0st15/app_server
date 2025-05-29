@@ -5,13 +5,17 @@ set(CMAKE_CXX_STANDARD 20)
 include_directories(${CMAKE_SOURCE_DIR}/header)
 include_directories(${CMAKE_SOURCE_DIR}/lib/libsodium-win64/include)
 include_directories(${CMAKE_SOURCE_DIR}/lib/libsodium-win64/include/sodium)
-
+include_directories(${CMAKE_SOURCE_DIR}/openssl-3.5.0/include)
 
 set(SODIUM_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/lib/libsodium-win64/include")
 set(SODIUM_INCLUDE_DIR2 "${CMAKE_SOURCE_DIR}/lib/libsodium-win64/include/sodium")
 set(SODIUM_LIBRARY "${CMAKE_SOURCE_DIR}/lib/libsodium-win64/lib/libsodium.a")
 set(SQLITE_LIBRARY "${CMAKE_SOURCE_DIR}/lib/sqlite3.dll")
+set(OPENSSL_CRYPTO_LIBRARY "${CMAKE_SOURCE_DIR}/lib/openssl-3.5.0/crypto")
+set(OPENSSL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/lib/openssl-3.5.0/include")
+set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/lib/openssl-3.5.0")
 
+find_package(OpenSSL REQUIRED)
 add_executable(app_server cpp/main.cpp
         header/IRequestHandler.h
         header/router.h

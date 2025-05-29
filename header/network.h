@@ -24,5 +24,6 @@ private:
     SOCKET clientSock;
     WSADATA sdata;
     sockaddr_in clientInfo{};
+    SSL_CTX* Network::ctx;
 };
 #endif

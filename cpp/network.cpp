@@ -3,10 +3,19 @@
 //
 #include "network.h"
 #include <regex>
+#include "openssl/ssl.h"
 
 
 Network::Network(std::string ip,short port)
 {
+    if (ctx == nullptr) {
+        SSL_library_init();
+        SSL_load_error_strings();
+        ctx = SSL_CTX_new(TLS_server_method());
+        SSL_CTX_use_certificate_file(ctx, "server.crt", SSL_FILETYPE_PEM);
+        SSL_CTX_use_PrivateKey_file(ctx, "server.key", SSL_FILETYPE_PEM);
+    }
+
     addr.sin_family=AF_INET;
     addr.sin_port=htons(port);
     inet_pton(AF_INET,ip.c_str(),&addr.sin_addr.s_addr);
@@ -17,6 +26,10 @@ Network::Network(std::string ip,short port)
 Network::~Network()
 {
     WSACleanup();
+    if (ssl != nullptr) {
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+    }
 }
 void Network::closeAndClear(SOCKET sock)
 {
@@ -69,7 +82,16 @@ int Network::recieveRequest(Request &req) {
         closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
         return -5;
     }
-    packet_size = recv(clientSock, servBuff.data(), servBuff.size(), 0);
+
+    ssl = SSL_new(ctx);
+    SSL_set_fd(ssl, clientSock);
+    if (SSL_accept(ssl) <= 0) {
+        ERR_print_errors_fp(stderr);
+        closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
+        return -10;
+    }
+    packet_size = SSL_read(ssl, servBuff.data(), servBuff.size());
+
     std::string request(servBuff.begin(), servBuff.end());
     //первая строка
     std::regex start_line_regex(R"(^([A-Z]+)\s+([^?# ]*)(?:\?([^ ]*))?\s+(HTTP/\d+\.\d+)\r\n)", std::regex::icase);
@@ -118,7 +140,7 @@ int Network::sendResponse(Response &res)
     http_response += "Connection: close\r\n\r\n";
     http_response += res.body;
 
-    if (SOCKET_ERROR == (send(clientSock, http_response.c_str(), http_response.size(), 0)))
+    if (SSL_write(ssl, http_response.c_str(), http_response.size()) <= 0)
     {
         closeAndClear(std::vector<SOCKET>{srvSock, clientSock});
         return WSAGetLastError();
